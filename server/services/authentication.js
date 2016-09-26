@@ -4,26 +4,11 @@ const facebookStrategy = require('passport-facebook').Strategy;
 const googleStrategy = require('passport-google-oauth20').Strategy;
 const githubStrategy = require('passport-github').Strategy;
 
-module.exports = function(app, dbPromise){
-
-    // normalize user data when creating users
-    dbPromise.then(()=>{
-        app.service('/users').before({
-            create(hook) {
-                const { facebook, github, google, twitter } = hook.data;
-                if (github) {
-                    hook.data.name = github.login;
-                } else if (facebook) {
-                    hook.data.name = facebook.name;
-                } else if (google) {
-                    hook.data.name = google.displayName;
-                } else {
-                    console.log(require('util').inspect(hook));
-                }
-            }
-        });
-    });
-
+/**
+ * Configures the authentication service (/auth/*) used for passport-style SSO
+ * @param app - feathers app
+ */
+module.exports = function(app){
     return authentication({
         idField: 'id',
         userEndpoint: '/users',
@@ -53,13 +38,6 @@ module.exports = function(app, dbPromise){
             strategy: githubStrategy,
             clientID: config.auth.github.clientID,
             clientSecret: config.auth.github.clientSecret,
-        },
-
-        /*twitter: {
-            idField: 'id',
-            strategy: twitterStrategy,
-            consumerKey: config.auth.twitter.clientID,
-            consumerSecret: config.auth.twitter.clientSecret
-        }*/
+        }
     });
 };

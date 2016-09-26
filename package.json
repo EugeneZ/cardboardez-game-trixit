@@ -6,7 +6,8 @@
   "private": true,
   "scripts": {
     "start": "browserify -t babelify client/main.js > public/assets/scripts/client.js && node server.js",
-    "watch": "watchify --debug -t babelify client/main.js -o public/assets/scripts/client.js"
+    "watchify": "watchify --debug -t babelify client/main.js -o public/assets/scripts/client.js",
+    "nodemon": "nodemon server.js"
   },
   "dependencies": {
     "autobind-decorator": "^1.3.4",
@@ -41,6 +42,7 @@
     "feathers-rest": "^1.5.0",
     "feathers-rethinkdb": "^0.2.3",
     "feathers-socketio": "^1.4.1",
+    "nodemon": "^1.10.2",
     "passport-facebook": "^1.0.3",
     "passport-github": "^1.1.0",
     "passport-google-oauth20": "^1.0.0",

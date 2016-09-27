@@ -1,20 +1,30 @@
 import React from 'react';
-import { Router, Route, Link, browserHistory } from 'react-router'
+import { Router, Route, browserHistory, IndexRoute } from 'react-router'
 import { Provider } from 'react-redux';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
 import App from './component/App';
+import GamesList from './component/GamesList';
+import NewGame from './component/NewGame';
+import Welcome from './component/Welcome';
 
-export default function(store){
+export default function (store) {
+
+    function requireAuthentication(nextState, replace) {
+        if (!store.getState().user.id) {
+            replace({
+                pathname: '/login',
+            });
+        }
+    }
+
     return (
         <Provider store={store}>
             <MuiThemeProvider>
                 <Router history={browserHistory}>
                     <Route path="/" component={App}>
-                        <Route path="about" component={About}/>
-                        <Route path="users" component={Users}>
-                            <Route path="/user/:userId" component={User}/>
-                        </Route>
-                        <Route path="*" component={NoMatch}/>
+                        <IndexRoute component={GamesList} onEnter={requireAuthentication}/>
+                        <Route path="login" component={Welcome}/>
+                        <Route path="new" component={NewGame} onEnter={requireAuthentication}/>
                     </Route>
                 </Router>
             </MuiThemeProvider>

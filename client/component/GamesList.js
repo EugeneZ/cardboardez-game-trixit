@@ -7,7 +7,7 @@ export default class GamesList extends Component {
             return null;
         }
         return (
-            <Table onRowSelection={arr=>this.props.onClickGame(this.props.games[arr[0]])}>
+            <Table onRowSelection={arr=>this.props.onGotoGame(this.props.games[arr[0]])}>
                 <TableHeader displaySelectAll={false} adjustForCheckbox={false}>
                     <TableRow>
                         <TableHeaderColumn>Title</TableHeaderColumn>

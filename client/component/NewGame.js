@@ -52,8 +52,11 @@ export default class NewGame extends Component {
                     <SelectField key={i} value={players[i]} floatingLabelText={`Player ${i + 1}`}
                                  onChange={this.onChangePlayer.bind(this, i)} fullWidth={true}
                                  errorText={!players[i] && i < minPlayers && 'This player is required'}>
-                        {this.props.users.map(player => <MenuItem key={player.id} value={player.id}
-                                                                  primaryText={player.name}/>)}
+
+                        {this.props.users
+                            .filter(user => user.id === players[i] || players.indexOf(user.id) === -1)
+                            .map(player => <MenuItem key={player.id} value={player.id} primaryText={player.name}/>)}
+
                     </SelectField>
                 );
             }

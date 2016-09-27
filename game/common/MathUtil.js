@@ -1,6 +1,11 @@
 var _ = require('lodash');
 
 var GameMath = {
+    getRandomInt(max) {
+        max = Math.floor(max);
+        return Math.floor(Math.random() * (max + 1));
+    },
+
     randomUniqueArray: function (length, min, max) {
         var rands = [], tries = 0;
         do {

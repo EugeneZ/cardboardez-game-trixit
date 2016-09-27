@@ -57,7 +57,6 @@ export default withRouter(class App extends Component {
     }
 
     onClickCreateGame(data) {
-        this.props.router.push({ pathname: `/game/${data.id}` });
         this.props.dispatch({ type: 'CREATE_GAME', data });
 
     }

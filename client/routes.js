@@ -6,6 +6,7 @@ import App from './component/App';
 import GamesList from './component/GamesList';
 import NewGame from './component/NewGame';
 import Welcome from './component/Welcome';
+import PlayArea from './component/PlayArea';
 
 export default function (store) {
 
@@ -25,6 +26,7 @@ export default function (store) {
                         <IndexRoute component={GamesList} onEnter={requireAuthentication}/>
                         <Route path="login" component={Welcome}/>
                         <Route path="new" component={NewGame} onEnter={requireAuthentication}/>
+                        <Route path="game/:id" component={PlayArea} onEnter={requireAuthentication}/>
                     </Route>
                 </Router>
             </MuiThemeProvider>

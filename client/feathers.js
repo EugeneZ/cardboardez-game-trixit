@@ -11,6 +11,6 @@ const app = feathers()
     .configure(authentication({ storage: window.localStorage }));
 
 // When the transport changes, we need to re-authenticate
-socket.io.engine.on('upgrade', () => app.authenticate());
+socket.io.engine.on('upgrade', () => app.authenticate().catch(()=>{}));
 
 export default app;

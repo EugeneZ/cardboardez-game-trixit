@@ -11,7 +11,7 @@ const githubStrategy = require('passport-github').Strategy;
 module.exports = function(app){
     return authentication({
         idField: 'id',
-        userEndpoint: '/users',
+        userEndpoint: `/${config.api}/users`,
         shouldSetupSuccessRoute: false,
         successRedirect: '/',
 

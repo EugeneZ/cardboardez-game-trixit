@@ -5,6 +5,7 @@ const socketio = require('feathers-socketio');
 const hooks = require('feathers-hooks');
 const bodyParser = require('body-parser');
 const errorHandler = require('feathers-errors/handler');
+const path = require('path');
 const authentication = require('./server/services/authentication');
 const services = require('./server/services');
 const db = require('./server/db');
@@ -23,6 +24,10 @@ app.configure(hooks());
 app.configure(rest());
 app.configure(socketio());
 app.configure(authentication(app));
+
+app.get('/*', (req,res) => {
+    res.sendfile(path.join(__dirname, 'public/index.html'))
+});
 
 Promise.all([dbPromise, servicesPromise]).then(
     () => app.listen(config.port),

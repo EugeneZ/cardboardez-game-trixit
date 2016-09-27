@@ -10,5 +10,6 @@
 /node_modules
 /npm-debug.log
 /public/assets/scripts/client.js
+/public/assets/images/trixit
 
 !/config/default.json

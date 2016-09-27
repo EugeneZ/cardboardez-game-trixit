@@ -4,7 +4,13 @@ import socketio from 'feathers-socketio/client';
 import authentication from 'feathers-authentication/client';
 import io from 'socket.io-client';
 
-export default feathers()
-    .configure(socketio(io()))
+const socket = io();
+const app = feathers()
+    .configure(socketio(socket))
     .configure(hooks())
     .configure(authentication({ storage: window.localStorage }));
+
+// When the transport changes, we need to re-authenticate
+socket.io.engine.on('upgrade', () => app.authenticate());
+
+export default app;

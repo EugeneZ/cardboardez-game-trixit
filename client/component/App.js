@@ -9,6 +9,7 @@ import MenuIcon from 'material-ui/svg-icons/navigation/menu';
 import FlatButton from 'material-ui/FlatButton';
 import Welcome from './Welcome';
 import NewGame from './NewGame';
+import GamesList from './GamesList';
 
 @connect(state => state)
 @autobind
@@ -18,14 +19,27 @@ export default class App extends Component {
     };
 
     render() {
-        const { page } = this.state;
-        const { user, users } = this.props;
+        let page = this.state.page;
+        const { user, users, games, game } = this.props;
+
+        if (user && user.id) {
+            if (game && game.id) {
+                page = game.game;
+            } else if (games && games.length) {
+                page = 'games';
+            } else {
+                page ='newgame';
+            }
+        }
+
         return (
             <div>
                 <AppBar title={'CardboardEZ' + (user.name ? ` - ${user.name}` : '')}
                         showMenuIconButton={false} iconElementRight={this.renderRightAppBarIcon()}/>
                 {page === 'welcome' && <Welcome/>}
                 {page === 'newgame' && <NewGame users={users} user={user} onNewGame={this.onClickCreateGame}/>}
+                {page === 'games' && <GamesList games={games} users={users} onClickGame={this.onClickGame}/>}
+                {page === 'trixit' && <div>TRIXIT {game.id}</div>}
             </div>
         )
     }
@@ -72,7 +86,6 @@ export default class App extends Component {
     }
 
     onClickNewGame() {
-        this.props.dispatch({ type: 'FETCH_USERS' });
         this.setState({ page: 'newgame' });
     }
 
@@ -84,5 +97,10 @@ export default class App extends Component {
         this.setState({ page: data.game });
         this.props.dispatch({ type: 'CREATE_GAME', data });
 
+    }
+
+    onClickGame(game) {
+        this.setState({ page: game.game });
+        this.props.dispatch({ type: 'ACTIVATE_GAME', data: game });
     }
 }

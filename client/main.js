@@ -14,7 +14,8 @@ import games from './reducers/games';
 import App from './component/App';
 import { authenticate } from './sagas/authentication';
 import { watchForFetchUsers } from './sagas/users';
-import { watchForCreateGame } from './sagas/games';
+import { watchForCreateGame, watchForGetOwnGames } from './sagas/games';
+import { subscribeAll } from './realtime';
 
 injectTapEventPlugin();
 
@@ -28,6 +29,9 @@ const store = createStore(combineReducers({ user, users, game, games }), compose
 sagaMiddleware.run(authenticate);
 sagaMiddleware.run(watchForFetchUsers);
 sagaMiddleware.run(watchForCreateGame);
+sagaMiddleware.run(watchForGetOwnGames);
+
+subscribeAll(store.dispatch);
 
 ReactDOM.render(
     <Provider store={store}>

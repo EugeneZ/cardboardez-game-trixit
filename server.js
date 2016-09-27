@@ -26,7 +26,7 @@ app.configure(socketio());
 app.configure(authentication(app));
 
 app.get('/*', (req,res) => {
-    res.sendfile(path.join(__dirname, 'public/index.html'))
+    res.sendfile(path.join(__dirname, 'public', 'index.html'))
 });
 
 Promise.all([dbPromise, servicesPromise]).then(

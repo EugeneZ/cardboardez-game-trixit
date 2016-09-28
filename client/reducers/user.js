@@ -1,10 +1,9 @@
-export default function (state = {}, action) {
-    switch (action.type) {
-        case 'AUTHENTICATE_SUCCESS':
-            return action.data;
-        case 'LOGOUT_SUCCESS':
-            return {};
-        default:
-            return state;
+import feathers from '../feathers';
+
+export default function (state = feathers.get('user') || {}, action) {
+    if (action.type === 'LOGOUT_SUCCESS') {
+        return {};
+    } else {
+        return state;
     }
 };

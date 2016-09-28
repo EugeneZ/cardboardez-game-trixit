@@ -1,7 +1,7 @@
 import reduxSaga from 'redux-saga';
-import { authenticate } from './authentication';
-import { watchForFetchUsers } from './users';
-import { watchForCreateGame, watchForGetOwnGames } from './games';
+import { watchForLogout } from './authentication';
+import { initializeUsers } from './users';
+import { initializeGames, watchForCreateGame } from './games';
 
 const sagaMiddleware = reduxSaga();
 
@@ -9,9 +9,9 @@ export { sagaMiddleware };
 
 export function runSagas() {
     [
-        authenticate,
-        watchForCreateGame,
-        watchForFetchUsers,
-        watchForGetOwnGames
+        initializeUsers,
+        initializeGames,
+        watchForLogout,
+        watchForCreateGame
     ].forEach(saga => sagaMiddleware.run(saga));
 }

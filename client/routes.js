@@ -2,6 +2,7 @@ import React from 'react';
 import { Router, Route, browserHistory, IndexRoute } from 'react-router'
 import { Provider } from 'react-redux';
 import MuiThemeProvider from 'material-ui/styles/MuiThemeProvider';
+import feathers from './feathers';
 import App from './component/App';
 import GamesList from './component/GamesList';
 import NewGame from './component/NewGame';
@@ -11,9 +12,10 @@ import PlayArea from './component/PlayArea';
 export default function (store) {
 
     function requireAuthentication(nextState, replace) {
-        if (!store.getState().user.id) {
+        if (!feathers.get('user')) {
             replace({
                 pathname: '/login',
+                state: { nextPathname: nextState.location.pathname }
             });
         }
     }

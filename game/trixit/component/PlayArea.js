@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import {BottomNavigation, BottomNavigationItem} from 'material-ui/BottomNavigation';
+import FontIcon from 'material-ui/FontIcon';
+import { BottomNavigation, BottomNavigationItem } from 'material-ui/BottomNavigation';
 import Paper from 'material-ui/Paper';
 
 const styles = {
@@ -20,6 +21,10 @@ const styles = {
     image: {
         width: '100%',
         borderRadius: 10
+    },
+    bottomNavigation: {
+        position: 'absolute',
+        left: 0, right: 0, bottom: 0
     }
 };
 
@@ -30,7 +35,7 @@ export default class PlayArea extends Component {
         console.log(game, me);
 
         let actionElement = null;
-        if (game.mode === 'story'){
+        if (game.mode === 'story') {
             if (game.storyteller === me.id) {
                 actionElement = (
                     <div style={styles.actionWrapper}>
@@ -47,9 +52,29 @@ export default class PlayArea extends Component {
                 </div>
                 <div style={styles.hand}>
                     {me._private.hand.map((card, i) =>
-                        <div key={i} style={styles.card}><img style={styles.image} src={`/assets/images/trixit/${card}.jpg`}/></div>
+                        <div key={i} style={styles.card}><img style={styles.image}
+                                                              src={`/assets/images/trixit/${card}.jpg`}/></div>
                     )}
                 </div>
+                <Paper zDepth={1} style={styles.bottomNavigation}>
+                    <BottomNavigation selectedIndex={0}>
+                        <BottomNavigationItem
+                            label="My Hand"
+                            icon={<FontIcon className="fa fa-hand-stop-o"/>}
+                            onTouchTap={() => this.select(0)}
+                        />
+                        <BottomNavigationItem
+                            label="Board"
+                            icon={<FontIcon className="fa fa-clone"/>}
+                            onTouchTap={() => this.select(1)}
+                        />
+                        <BottomNavigationItem
+                            label="Score"
+                            icon={<FontIcon className="fa fa-star-o"/>}
+                            onTouchTap={() => this.select(2)}
+                        />
+                    </BottomNavigation>
+                </Paper>
             </div>
         );
     }

@@ -15,7 +15,8 @@ export default withRouter(class App extends Component {
         const { user } = this.props;
         const childProps = Object.assign({}, this.props, {
             onNewGame: this.onClickCreateGame,
-            onGotoGame: this.onClickGame
+            onGotoGame: this.onClickGame,
+            onSendAction: this.onSendAction
         });
 
         return (
@@ -64,5 +65,9 @@ export default withRouter(class App extends Component {
     onClickGame(game) {
         this.props.router.push({ pathname: `/game/${game.id}` });
         this.props.dispatch({ type: 'ACTIVATE_GAME', data: game });
+    }
+
+    onSendAction(data) {
+        this.props.dispatch({ type: 'GAME_ACTION', data });
     }
 });

@@ -33,9 +33,11 @@ module.exports = function(app, dbPromise) {
 
             update(hook) {
                 const module = gameProvider.getGameServerModule(hook.data);
-                const game = app.service(ENDPOINT).get(hook.data.id);
-                module[game.mode()](hook.data, game);
-                hook.data.updated = new Date();
+                return app.service(ENDPOINT).get(hook.data.id).then(game => {
+                    module[game.mode](hook.data, game);
+                    hook.data = game;
+                    hook.data.updated = new Date();
+                });
             },
             patch : hooks.disable('external'),
             remove: hooks.disable('external')

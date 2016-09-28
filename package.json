@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "start": "browserify -t babelify client/main.js > public/assets/scripts/client.js && node server.js",
-    "watchify": "watchify --debug -t babelify client/main.js -o public/assets/scripts/client.js",
+    "watchify": "watchify --debug -t babelify -p livereactload client/main.js -o public/assets/scripts/client.js",
     "nodemon": "nodemon --debug --ignore client/ --ignore public/ --ignore game/trixit/component/ server.js",
     "test": "tape -r babel-register \"test/unit/**/*.js\""
   },
@@ -30,6 +30,7 @@
     "socket.io-client": "^1.4.8"
   },
   "devDependencies": {
+    "babel-plugin-react-transform": "^2.0.2",
     "babel-plugin-transform-function-bind": "^6.8.0",
     "babel-preset-latest": "^6.14.0",
     "babel-preset-react": "^6.11.1",
@@ -43,10 +44,12 @@
     "feathers-errors": "^2.4.0",
     "feathers-rest": "^1.5.0",
     "feathers-rethinkdb": "^0.2.3",
+    "livereactload": "^3.0.0",
     "nodemon": "^1.10.2",
     "passport-facebook": "^1.0.3",
     "passport-github": "^1.1.0",
     "passport-google-oauth20": "^1.0.0",
+    "react-proxy": "^1.1.8",
     "rethinkdbdash": "^2.3.23",
     "tape": "^4.6.0"
   }

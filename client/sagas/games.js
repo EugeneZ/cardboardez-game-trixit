@@ -9,6 +9,7 @@ function* createGame(action) {
         browserHistory.push({ pathname: `/game/${data.id}` });
         yield put({ type: 'CREATE_GAME_SUCCESS', data });
     } catch(error) {
+        console.log(error);
         yield put({ type: 'CREATE_GAME_FAILURE', error });
     }
 }

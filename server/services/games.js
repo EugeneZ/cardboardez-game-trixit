@@ -2,9 +2,6 @@ const config = require('config');
 const dbService = require('feathers-rethinkdb');
 const hooks = require('feathers-hooks');
 const gameProvider = require('../../game/gameProvider');
-const Game = require('../../game/common/Game');
-const Players = require('../../game/common/Players');
-const Player = require('../../game/common/Player');
 
 const ENDPOINT = `/${config.api}/games`;
 
@@ -29,35 +26,15 @@ module.exports = function(app, dbPromise) {
             },
 
             create(hook) {
-                try {
-                    const module = gameProvider.getGameServerModule(hook.data);
-                    const game = new Game();
-                    const players = new Players();
-                    let player;
-                    hook.data.players.forEach(user => {
-                        player = new Player();
-                        player.id = user;
-                        players.a.push(player);
-                    });
-                    module.setup(game, players);
-                    hook.data.gamestate = game.toJSON();
-                    hook.data.playerstate = players.toJSON();
-                    hook.data.updated = new Date();
-                } catch(err) {
-                    console.log(err);
-                }
+                const module = gameProvider.getGameServerModule(hook.data);
+                module.setup(Object.assign(hook.data, { _hidden: {}, _players: hook.data.players.map(id=>({id, _hidden: {}, _private: {}}))}));
+                hook.data.updated = new Date();
             },
 
             update(hook) {
                 const module = gameProvider.getGameServerModule(hook.data);
-                const data = app.service(ENDPOINT).get(hook.data.id);
-                const game = Game.fromJSON(data.gamestate);
-                const players = Players.fromJSON(data.playerstate);
-                module[game.mode()](hook.data, game, players);
-
-                hook.data = data;
-                hook.data.gamestate = game.toJSON();
-                hook.data.playerstate = players.toJSON();
+                const game = app.service(ENDPOINT).get(hook.data.id);
+                module[game.mode()](hook.data, game);
                 hook.data.updated = new Date();
             },
             patch : hooks.disable('external'),

@@ -26,21 +26,15 @@ const styles = {
 export default class PlayArea extends Component {
     render() {
         const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
-        const gamestate = JSON.parse(game.gamestate);
-        const players = game.playerstate.split('_-_-_SEPARATOR_-_-_').map(json => {
-            try {
-                return JSON.parse(json)
-            } catch(e){}
-        }).filter(player => player);
-        const me = players.filter(player => player.id === this.props.user.id)[0];
-        console.log(players, gamestate, me);
+        const me = game._players.filter(player => player.id === this.props.user.id)[0];
+        console.log(game, me);
 
         let actionElement = null;
-        if (gamestate.mode === 'story'){
-            if (players[gamestate.publics.storyteller].id === me.id) {
+        if (game.mode === 'story'){
+            if (game.storyteller === me.id) {
                 actionElement = (
                     <div style={styles.actionWrapper}>
-                        
+
                     </div>
                 )
             }
@@ -52,7 +46,7 @@ export default class PlayArea extends Component {
 
                 </div>
                 <div style={styles.hand}>
-                    {me.hands.hand.map((card, i) =>
+                    {me._private.hand.map((card, i) =>
                         <div key={i} style={styles.card}><img style={styles.image} src={`/assets/images/trixit/${card}.jpg`}/></div>
                     )}
                 </div>

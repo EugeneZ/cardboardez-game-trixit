@@ -19,7 +19,8 @@ export default withRouter(class App extends Component {
             onNewGame: this.onClickCreateGame,
             onGotoGame: this.onClickGame,
             onSendAction: this.onSendAction,
-            onPatchProfile: this.onPatchProfile
+            onPatchProfile: this.onPatchProfile,
+            onGotoNewGame: this.onClickNewGame
         });
 
         return (

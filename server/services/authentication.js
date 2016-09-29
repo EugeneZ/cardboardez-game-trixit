@@ -13,7 +13,7 @@ module.exports = function(app){
         idField: 'id',
         userEndpoint: `/${config.api}/users`,
         shouldSetupSuccessRoute: false,
-        successRedirect: '/',
+        successRedirect: '/profile',
 
         facebook: {
             strategy: facebookStrategy,

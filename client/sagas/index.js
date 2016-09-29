@@ -1,6 +1,6 @@
 import reduxSaga from 'redux-saga';
 import { watchForLogout } from './authentication';
-import { initializeUsers } from './users';
+import { initializeUsers, watchForPatchProfile } from './users';
 import { initializeGames, watchForCreateGame, watchForGameAction } from './games';
 
 const sagaMiddleware = reduxSaga();
@@ -13,6 +13,7 @@ export function runSagas() {
         initializeGames,
         watchForLogout,
         watchForCreateGame,
-        watchForGameAction
+        watchForGameAction,
+        watchForPatchProfile
     ].forEach(saga => sagaMiddleware.run(saga));
 }

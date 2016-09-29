@@ -3,15 +3,17 @@ import user from './user';
 import users from './users';
 import game from './game';
 import games from './games';
+import errors from './errors';
 
 const reducer = combineReducers({
     user,
     users,
     game,
-    games
+    games,
+    errors
 });
 
-export default function(sagaMiddleware){
+export default function (sagaMiddleware) {
     return createStore(reducer, compose(
         applyMiddleware(sagaMiddleware),
         window.devToolsExtension ? window.devToolsExtension() : f => f

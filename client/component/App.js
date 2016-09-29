@@ -7,21 +7,24 @@ import IconButton from 'material-ui/IconButton';
 import IconMenu from 'material-ui/IconMenu';
 import MenuItem from 'material-ui/MenuItem';
 import MenuIcon from 'material-ui/svg-icons/navigation/menu';
+import feathers from '../feathers';
 
-@connect(state => state)
+@connect(state => Object.assign({}, state, {
+    user: state.users.filter(user => user.id === feathers.get('user').id)[0] || {}
+}))
 @autobind
 export default withRouter(class App extends Component {
     render() {
-        const { user } = this.props;
         const childProps = Object.assign({}, this.props, {
             onNewGame: this.onClickCreateGame,
             onGotoGame: this.onClickGame,
-            onSendAction: this.onSendAction
+            onSendAction: this.onSendAction,
+            onPatchProfile: this.onPatchProfile
         });
 
         return (
             <div>
-                <AppBar title={'CardboardEZ' + (user.name ? ` - ${user.name}` : '')}
+                <AppBar title={'CardboardEZ' + (this.props.user.name ? ` - ${this.props.user.name}` : '')}
                         showMenuIconButton={false} iconElementRight={this.renderRightAppBarIcon()}/>
                 {React.cloneElement(this.props.children, childProps)}
             </div>
@@ -40,7 +43,8 @@ export default withRouter(class App extends Component {
             >
                 <MenuItem key={0} primaryText="Start New Game" onTouchTap={this.onClickNewGame}/>
                 <MenuItem key={1} primaryText="My Games" onTouchTap={this.onClickMyGames}/>
-                <MenuItem key={2} primaryText="Log Out" onTouchTap={this.onClickLogout}/>
+                <MenuItem key={2} primaryText="Profile" onTouchTap={this.onClickProfile}/>
+                <MenuItem key={3} primaryText="Log Out" onTouchTap={this.onClickLogout}/>
             </IconMenu>
         );
     }
@@ -57,6 +61,10 @@ export default withRouter(class App extends Component {
         this.props.router.push({ pathname: '/' });
     }
 
+    onClickProfile() {
+        this.props.router.push({ pathname: '/profile' });
+    }
+
     onClickCreateGame(data) {
         this.props.dispatch({ type: 'CREATE_GAME', data });
 
@@ -69,5 +77,9 @@ export default withRouter(class App extends Component {
 
     onSendAction(data) {
         this.props.dispatch({ type: 'GAME_ACTION', data });
+    }
+
+    onPatchProfile(data) {
+        this.props.dispatch({ type: 'PATCH_PROFILE', data });
     }
 });

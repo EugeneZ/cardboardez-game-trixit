@@ -8,6 +8,7 @@ import GamesList from './component/GamesList';
 import NewGame from './component/NewGame';
 import Welcome from './component/Welcome';
 import PlayArea from './component/PlayArea';
+import Profile from './component/Profile';
 
 export default function (store) {
 
@@ -29,6 +30,7 @@ export default function (store) {
                         <Route path="login" component={Welcome}/>
                         <Route path="new" component={NewGame} onEnter={requireAuthentication}/>
                         <Route path="game/:id" component={PlayArea} onEnter={requireAuthentication}/>
+                        <Route path="profile" component={Profile} onEnter={requireAuthentication}/>
                     </Route>
                 </Router>
             </MuiThemeProvider>

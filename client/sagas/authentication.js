@@ -8,7 +8,7 @@ export function* watchForLogout() {
             yield take('LOGOUT');
             yield feathers.logout();
             yield put({ type: 'LOGOUT_SUCCESS' });
-            browserHistory.push('/');
+            browserHistory.push('/login');
         }
     } catch (error) {
         yield put({ type: 'LOGOUT_FAILURE', error });

@@ -16,9 +16,8 @@ function getStyles(context) {
     return {
         wrapper: {
             backgroundImage: 'url(/assets/images/trixit/bg.jpg)',
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            paddingTop: context.muiTheme.appBar.height
+            minHeight: '100%',
+            marginBottom: -context.muiTheme.bottomNavigation.height
         },
 
         instructions: {
@@ -27,12 +26,15 @@ function getStyles(context) {
         },
 
         bottomNavigation: {
-            position: 'absolute',
-            left: 0, right: 0, bottom: 0
+            height: context.muiTheme.bottomNavigation.height
         },
 
         dialog: {
             width: 450
+        },
+
+        push: {
+            height: context.muiTheme.bottomNavigation.height
         }
     }
 }
@@ -143,12 +145,15 @@ export default class PlayArea extends Component {
         ];
 
         return (
-            <div style={styles.wrapper}>
-                <LinearProgress mode="determinate" value={progress}/>
-                <Paper zDepth={4} style={styles.instructions}>
-                    {instructions}
-                </Paper>
-                {main}
+            <div>
+                <div style={styles.wrapper}>
+                    <LinearProgress mode="determinate" value={progress}/>
+                    <Paper zDepth={4} style={styles.instructions}>
+                        {instructions}
+                    </Paper>
+                    {main}
+                    <div style={styles.push}/>
+                </div>
                 <Paper zDepth={1} style={styles.bottomNavigation}>
                     <BottomNavigation selectedIndex={this.state.tab}>
                         <BottomNavigationItem label="My Hand" icon={<FontIcon className="fa fa-hand-stop-o"/>}
@@ -178,7 +183,9 @@ export default class PlayArea extends Component {
 
         if (game.mode === 'story' && me === storyteller) {
             this.setState({ card });
-        } else if (game.mode === 'suggestion' && me !== storyteller) {
+        } else if (game.mode === 'suggestion' && me !== storyteller && !me._private.card) {
+            this.sendAction({ card });
+        } else if (game.mode === 'next') {
             this.sendAction({ card });
         }
     }

@@ -5,11 +5,15 @@ import RaisedButton from 'material-ui/RaisedButton';
 
 export default class GamesList extends Component {
     render() {
-        if (!this.props.users || !this.props.users.length || !this.props.games || !this.props.games.length) {
+        const { users, onGotoGame } = this.props;
+        const games = this.props.games.slice().sort((a,b)=>a.updated < b.updated);
+
+        if (!users || !users.length || !games || !games.length) {
             return this.renderNoGames();
         }
+
         return (
-            <Table onRowSelection={arr=>this.props.onGotoGame(this.props.games[arr[0]])}>
+            <Table onRowSelection={arr=>onGotoGame(games[arr[0]])}>
                 <TableHeader displaySelectAll={false} adjustForCheckbox={false}>
                     <TableRow>
                         <TableHeaderColumn>Title</TableHeaderColumn>
@@ -17,11 +21,11 @@ export default class GamesList extends Component {
                     </TableRow>
                 </TableHeader>
                 <TableBody displayRowCheckbox={false} showRowHover={true} stripedRows={true}>
-                    {this.props.games.map(game =>
+                    {games.map(game =>
                         <TableRow key={game.id}>
                             <TableRowColumn>{game.title}</TableRowColumn>
                             <TableRowColumn>{game.players.map((id, key) =>
-                                <div key={key}>{this.props.users.filter(p=>p.id == id)[0].name}</div>
+                                <div key={key}>{users.filter(p=>p.id == id)[0] ? users.filter(p=>p.id == id)[0].name : 'INVALID GAME'}</div>
                             )}</TableRowColumn>
                         </TableRow>
                     )}

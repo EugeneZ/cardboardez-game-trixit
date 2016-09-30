@@ -3,6 +3,7 @@ const dbService = require('feathers-rethinkdb');
 const hooks = require('feathers-hooks');
 const gameProvider = require('../../game/gameProvider');
 const authHooks = require('feathers-authentication').hooks;
+const _ = require('lodash');
 
 const ENDPOINT = `/${config.api}/games`;
 
@@ -39,6 +40,16 @@ function cleanGameData(data, id){
     }
 
     return game;
+}
+
+function createNewGameData(data){
+    const starterPlayers = _.shuffle(data.players.map(id => ({
+        id,
+        _hidden: {},
+        _private: {}
+    })));
+    const starterGame = { _hidden: {}, _players: starterPlayers};
+    return Object.assign(data, starterGame);
 }
 
 module.exports = function(app, dbPromise) {
@@ -84,7 +95,7 @@ module.exports = function(app, dbPromise) {
 
             create(hook) {
                 const module = gameProvider.getGameServerModule(hook.data);
-                module.setup(Object.assign(hook.data, { _hidden: {}, _players: hook.data.players.map(id=>({id, _hidden: {}, _private: {}}))}));
+                module.setup(createNewGameData(hook.data));
                 hook.data.updated = new Date();
             },
 

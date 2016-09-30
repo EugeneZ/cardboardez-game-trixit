@@ -48,9 +48,11 @@ module.exports.suggestion = function(suggestion, game){
         }
         player._private.suggestion = suggestion.card;
         player._private.hand = _.pull(player._private.hand, suggestion.card);
+        player.ready = true;
     }, game);
 
-    if (_.every(game._players, player => typeof player._private.suggestion === 'number' || player.id === game.storyteller)){
+    if (game._players.every(player => player.ready || player.id === game.storyteller)){
+        game._players.forEach(player => player.ready = false);
         game.board = _.shuffle(game._players.map(player => player._private.suggestion)); // we placed the storycard as the storyteller's suggestion so this works
         game.mode = 'voting';
     }
@@ -63,9 +65,12 @@ module.exports.voting = function(vote, game) {
 
     forPlayer(vote.user.id, player => {
         player._private.vote = vote.card;
+        player.ready = true;
     }, game);
 
-    if (_.every(game._players, player => typeof player._private.vote === 'number' || player.id === game.storyteller)){
+    if (game._players.every(player => player.ready || player.id === game.storyteller)){
+
+        game._players.forEach(player => player.ready = false);
 
         // Reveal votes and card owners
         game._players.forEach(player => {
@@ -107,7 +112,7 @@ module.exports.voting = function(vote, game) {
         // Check for game over
         if (game._hidden.deck.length < game._players.length) {
             game.mode = 'gameover';
-        } else if (_.some(game._players, player => player.score >= 30)) {
+        } else if (game._players.some(player => player.score >= 30)) {
             game.mode = 'gameover';
         } else {
             game.mode = 'next';

@@ -11,7 +11,6 @@ import TextField from 'material-ui/TextField';
 import Cards from './Cards';
 import Card from './Card';
 import Score from './Score';
-import feathers from '../../../client/feathers';
 
 const styles = {
     wrapper: {
@@ -46,7 +45,9 @@ const styles = {
         body: {
             maxHeight: '100% !important'
         }
-    }
+    },
+
+    actionNeeded: { backgroundColor: '#81C784' }
 };
 
 @autobind
@@ -54,7 +55,8 @@ export default class PlayArea extends Component {
     state = {
         tab: 0,
         card: null,
-        story: ''
+        story: '',
+        zoom: null
     };
 
     componentDidMount() {
@@ -97,35 +99,42 @@ export default class PlayArea extends Component {
         const progress = (players.map(p=>p.score).sort((a, b)=>a > b)[players.length - 1] / 30) * 100;
         const me = players.filter(player => player.id === this.props.user.id)[0];
         const storyteller = players.filter(player => player.id === game.storyteller)[0];
+        const unready = players.filter(player => !player.ready).map(player => player.name).join(', ');
+        const unreadyIgnoringStoryteller = players.filter(player => !player.ready && player !== storyteller).map(player => player.name).join(', ');
 
         let instructions = 'Loading...';
+        let color = {};
         if (game.mode === 'story') {
             if (storyteller === me) {
                 instructions = 'Storyteller, select a card!';
+                color = styles.actionNeeded;
             } else {
                 instructions = `${storyteller.name} is the storyteller. Wait for them to select a card.`;
             }
         } else if (game.mode === 'suggestion') {
             if (storyteller === me) {
-                instructions = 'The others are picking a card for your story.';
+                instructions = `${unreadyIgnoringStoryteller} is picking a card for your story.`;
             } else if (me._private.suggestion) {
-                instructions = 'Wait for the others to pick their cards.';
+                instructions = `Wait for ${unreadyIgnoringStoryteller} to pick their cards.`;
             } else {
                 instructions = `${storyteller.name}'s story is: "${game.story}"... Pick a card that matches!`;
+                color = styles.actionNeeded;
             }
         } else if (game.mode === 'voting') {
             if (storyteller === me) {
-                instructions = 'The others are voting on which card they believe matches your story.';
+                instructions = `${unreadyIgnoringStoryteller} is voting on which card they believe matches your story.`;
             } else if (me._private.vote) {
-                instructions = 'Waiting for everyone else to vote for a card...';
+                instructions = `Waiting for ${unreadyIgnoringStoryteller} to vote for a card...`;
             } else {
                 instructions = `Pick a card from the board that matches ${storyteller.name}'s story: "${game.story}"`;
+                color = styles.actionNeeded;
             }
         } else if (game.mode === 'next') {
             if (me.ready) {
-                instructions = 'Waiting for everyone else to click a card to continue...';
+                instructions = `Waiting for ${unready} to click a card to continue...`;
             } else {
-                instructions = `The scores have been updated! See the tale revealed below. Click any card and the game will continue once everyone has done so.`;
+                instructions = `The scores have been updated! See the tale revealed below. Click any card and the game will continue.`;
+                color = styles.actionNeeded;
             }
         } else if (game.mode === 'gameover') {
             const scores = players.map(p=>p.score).sort();
@@ -146,10 +155,12 @@ export default class PlayArea extends Component {
             highlight = me._private.vote;
         }
 
-        let main = <Cards cards={me._private.hand} onClick={this.onClickCardInHand}/>;
-        if (this.state.tab === 1) {
+        let main = <Cards cards={me._private.hand} onClick={this.onClickCardInHand} onZoom={this.onZoom}/>;
+        if (this.state.zoom) {
+            main = <Card width="95%" {...this.state.zoom}/>
+        } else if (this.state.tab === 1) {
             main = <Cards cards={game.board || []} onClick={this.onClickCardOnBoard} highlight={highlight}
-                          labels={labels}/>
+                          labels={labels} onZoom={this.onZoom}/>
         } else if (this.state.tab === 2) {
             main = <Score players={players}/>
         }
@@ -171,7 +182,7 @@ export default class PlayArea extends Component {
             <div>
                 <div style={styles.wrapper}>
                     <LinearProgress mode="determinate" value={progress}/>
-                    <Paper zDepth={4} style={styles.instructions}>
+                    <Paper zDepth={4} style={Object.assign({}, styles.instructions, color)}>
                         {instructions}
                     </Paper>
                     {main}
@@ -199,6 +210,10 @@ export default class PlayArea extends Component {
     }
 
     onClickCardInHand(card) {
+        if (this.state.zoom) {
+            return this.setState({ zoom: null });
+        }
+
         const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
         const players = game._players;
         const me = players.filter(player => player.id === this.props.user.id)[0];
@@ -214,6 +229,10 @@ export default class PlayArea extends Component {
     }
 
     onClickCardOnBoard(card) {
+        if (this.state.zoom) {
+            return this.setState({ zoom: null });
+        }
+
         const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
         const players = game._players;
         const me = players.filter(player => player.id === this.props.user.id)[0];
@@ -252,5 +271,9 @@ export default class PlayArea extends Component {
             return;
         }
         this.node.style.height = (window.innerHeight - 110) + "px";
+    }
+
+    onZoom(props) {
+        this.setState({ zoom: this.state.zoom ? null : props });
     }
 }

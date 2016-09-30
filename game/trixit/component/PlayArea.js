@@ -31,7 +31,21 @@ const styles = {
     },
 
     dialog: {
-        width: 450
+        wrapper: {
+            paddingTop:'0 !important',
+            marginTop:'-65px !important',
+            bottom: '0 !important',
+            overflow: 'scroll !important',
+            height: 'auto !important'
+        },
+        content: {
+            width: '100%',
+            maxWidth: '450px',
+            maxHeight: '100% !important'
+        },
+        body: {
+            maxHeight: '100% !important'
+        }
     }
 };
 
@@ -72,6 +86,9 @@ export default class PlayArea extends Component {
     }
 
     render() {
+        if (!this.props.user || !this.props.user.id) {
+            return null;
+        }
         const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
         const players = game._players.map(player => {
             return Object.assign({}, player, { name: this.props.users.filter(p=>p.id === player.id)[0].name })
@@ -169,8 +186,9 @@ export default class PlayArea extends Component {
                                               onTouchTap={() => this.setState({ tab: 2 })}/>
                     </BottomNavigation>
                 </Paper>
-                <Dialog title="Tell a story" actions={actions} modal={true}
-                        style={styles.dialog}
+                <Dialog title="Tell a story" actions={actions} modal={true} repositionOnUpdate={false}
+                        autoDetectWindowHeight={true} autoScrollBodyContent={true}
+                        contentStyle={styles.dialog.content} bodyStyle={styles.dialog.body} style={styles.dialog.wrapper}
                         open={game.mode === 'story' && me === storyteller && this.state.card !== null}>
                     <TextField floatingLabelText="Your Story" value={this.state.story} onChange={this.onChangeStory}/>
                     <Card card={this.state.card} onClick={()=> {
@@ -225,15 +243,8 @@ export default class PlayArea extends Component {
         });
     }
 
-    /**
-     * TODO: We are merging the game and user info here but this should be done by the server...
-     * @param data
-     */
     sendAction(data) {
-        const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
-        this.props.onSendAction(Object.assign({}, game, {
-            user: feathers.get('user')
-        }, data));
+        this.props.onSendAction(data);
     }
 
     resizeToFit() {

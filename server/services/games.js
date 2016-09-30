@@ -2,10 +2,29 @@ const config = require('config');
 const dbService = require('feathers-rethinkdb');
 const hooks = require('feathers-hooks');
 const gameProvider = require('../../game/gameProvider');
+const authHooks = require('feathers-authentication').hooks;
 
 const ENDPOINT = `/${config.api}/games`;
 
 module.exports = function(app, dbPromise) {
+
+    function updateBasedOnGameAction(hook) {
+        return app.service(ENDPOINT).get(hook.data.id).then(game => {
+
+            // check the user is a player in the game
+            if (game.players.indexOf(hook.params.user.id)===-1) {
+                throw new Error('Cannot update a game you are not in');
+            } else {
+                hook.data.user = hook.params.user;
+            }
+
+            const module = gameProvider.getGameServerModule(game);
+            module[game.mode](hook.data, game);
+            hook.data = game;
+            hook.data.updated = new Date();
+        });
+    }
+
     return dbPromise.then(r => {
         app.use(ENDPOINT, dbService({Model: r, name: 'games'}));
 
@@ -31,14 +50,7 @@ module.exports = function(app, dbPromise) {
                 hook.data.updated = new Date();
             },
 
-            update(hook) {
-                const module = gameProvider.getGameServerModule(hook.data);
-                return app.service(ENDPOINT).get(hook.data.id).then(game => {
-                    module[game.mode](hook.data, game);
-                    hook.data = game;
-                    hook.data.updated = new Date();
-                });
-            },
+            update: [authHooks.populateUser(), updateBasedOnGameAction],
             patch : hooks.disable('external'),
             remove: hooks.disable('external')
         });

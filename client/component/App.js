@@ -10,7 +10,7 @@ import MenuIcon from 'material-ui/svg-icons/navigation/menu';
 import feathers from '../feathers';
 
 @connect(state => Object.assign({}, state, {
-    user: state.users.filter(user => user.id === feathers.get('user').id)[0] || {}
+    user: state.users.filter(user => user.id === (feathers.get('user') && feathers.get('user').id))[0] || {}
 }))
 @autobind
 export default withRouter(class App extends Component {
@@ -77,7 +77,7 @@ export default withRouter(class App extends Component {
     }
 
     onSendAction(data) {
-        this.props.dispatch({ type: 'GAME_ACTION', data });
+        this.props.dispatch({ type: 'GAME_ACTION', data: Object.assign({ id: this.props.params.id }, { data }) });
     }
 
     onPatchProfile(data) {

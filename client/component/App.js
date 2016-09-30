@@ -77,7 +77,7 @@ export default withRouter(class App extends Component {
     }
 
     onSendAction(data) {
-        this.props.dispatch({ type: 'GAME_ACTION', data: Object.assign({ id: this.props.params.id }, { data }) });
+        this.props.dispatch({ type: 'GAME_ACTION', data: Object.assign({ id: this.props.params.id }, data ) });
     }
 
     onPatchProfile(data) {

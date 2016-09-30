@@ -6,6 +6,41 @@ const authHooks = require('feathers-authentication').hooks;
 
 const ENDPOINT = `/${config.api}/games`;
 
+function cleanGameData(data, id){
+    if (!data) {
+        return data;
+    }
+
+    // sometimes we are cleaning an array of games, not an individual game
+    if (data && data.map && !data._players) {
+        const games = data.map(game => cleanGameData(game, id));
+        return games;
+    }
+
+    // We need to copy this so that we can send personalized responses, but instead of doing a deep copy we
+    // will only copy the structures that we need to personalize
+    const game = Object.assign({}, data);
+
+    if (game._hidden) {
+        delete game._hidden;
+    }
+
+    if (game._players && game._players.map) {
+        game._players = game._players.map(player => {
+            const playerCopy = Object.assign({}, player); // See above about why we shallow clone
+            if (playerCopy._hidden) {
+                delete playerCopy._hidden;
+            }
+            if (playerCopy._private && playerCopy.id !== id) {
+                delete playerCopy._private;
+            }
+            return playerCopy;
+        });
+    }
+
+    return game;
+}
+
 module.exports = function(app, dbPromise) {
 
     function updateBasedOnGameAction(hook) {
@@ -28,12 +63,15 @@ module.exports = function(app, dbPromise) {
     return dbPromise.then(r => {
         app.use(ENDPOINT, dbService({Model: r, name: 'games'}));
 
-        /**
-         * This hook removes the 'hasPlayer' query param from the client so that we can do our own manual processing
-         * in the after hook. If this wasn't here, the db service would look for games with a 'hasPlayer' field with
-         * this value.
-         */
+        app.service(ENDPOINT).before(authHooks.populateUser());
+
         app.service(ENDPOINT).before({
+
+            /**
+             * This hook removes the 'hasPlayer' query param from the client so that we can do our own manual processing
+             * in the after hook. If this wasn't here, the db service would look for games with a 'hasPlayer' field with
+             * this value.
+             */
             find(hook) {
                 const { params } = hook,
                       { query } = params;
@@ -50,7 +88,7 @@ module.exports = function(app, dbPromise) {
                 hook.data.updated = new Date();
             },
 
-            update: [authHooks.populateUser(), updateBasedOnGameAction],
+            update: updateBasedOnGameAction,
             patch : hooks.disable('external'),
             remove: hooks.disable('external')
         });
@@ -81,14 +119,16 @@ module.exports = function(app, dbPromise) {
         });
 
         /**
-         * Hide hidden information from players
+         * Hide hidden information from players. This means the _hidden field on the game and all players is removed,
+         * as well as the _private field for all players except the one requesting the information
          */
-        app.service(ENDPOINT).filter(function(data, connection) {
-            if(data.players.indexOf(connection.user.id) === -1) {
-                return false;
+        app.service(ENDPOINT).after(function(hook){
+            if (hook.params.provider) {
+                hook.result = cleanGameData(hook.result, hook.params.user.id);
             }
-
-            return data;
+        });
+        app.service(ENDPOINT).filter(function(data, connection) {
+            return cleanGameData(data, connection.user.id);
         });
     });
 };

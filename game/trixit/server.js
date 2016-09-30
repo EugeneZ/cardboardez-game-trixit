@@ -43,6 +43,9 @@ module.exports.suggestion = function(suggestion, game){
     }
 
     forPlayer(suggestion.user.id, player => {
+        if (player._private.suggestion) {
+            return;
+        }
         player._private.suggestion = suggestion.card;
         player._private.hand = _.pull(player._private.hand, suggestion.card);
     }, game);

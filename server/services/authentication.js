@@ -14,6 +14,9 @@ module.exports = function(app){
         userEndpoint: `/${config.api}/users`,
         shouldSetupSuccessRoute: false,
         successRedirect: '/profile',
+        cookie: {
+            secure: false // This seems like an insecure choice, but... this a board gaming website. Certs are a pain in the ass. There's nothing to gain by attacking this.
+        },
 
         facebook: {
             strategy: facebookStrategy,

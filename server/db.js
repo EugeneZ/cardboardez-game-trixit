@@ -1,7 +1,9 @@
 const config = require('config');
 const r = require('rethinkdbdash')({
     servers: config.db.hosts,
-    db: config.db.name
+    db: config.db.name,
+    user: config.db.user,
+    password: config.db.password
 });
 
 const INITIAL_TABLES = [

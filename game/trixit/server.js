@@ -2,9 +2,6 @@ const _ = require('lodash');
 const deck = require('../common/deck');
 const MathUtil = require('../common/MathUtil');
 
-function playerIsStoryteller(player, game) {
-    return game.storyteller === player.id;
-}
 function forPlayer(id, cb, game) {
     game._players.forEach(player => {
         if (player.id === id) {

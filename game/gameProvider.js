@@ -1,5 +1,4 @@
 module.exports.getGameServerModule = function(game) {
-    if (game.game === 'trixit'){
-        return require('./trixit/server');
-    }
+    const gamename = game.game.replace(/[^A-Za-z0-9_-]/g, '');
+    return require(`./${gamename}/server`);
 };

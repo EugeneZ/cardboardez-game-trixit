@@ -10,7 +10,7 @@ import MenuIcon from 'material-ui/svg-icons/navigation/menu';
 import feathers from '../feathers';
 
 @connect(state => Object.assign({}, state, {
-    user: state.users.filter(user => user.id === (feathers.get('user') && feathers.get('user').id))[0] || {}
+    user: state.users.length && feathers.get('user') ? state.users.filter(user => user.id === feathers.get('user').id)[0] : feathers.get('user') || {}
 }))
 @autobind
 export default withRouter(class App extends Component {

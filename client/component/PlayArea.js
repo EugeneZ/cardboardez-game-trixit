@@ -1,6 +1,6 @@
 import React from 'react';
 import { getPlayArea } from '../../game/clientGameProvider';
-import PlayArea from '../../game/trixit/component/PlayArea';
+
 export default function(props) {
     if (!props.games || !props.games.length) {
         return null;

@@ -1,7 +1,13 @@
-import TrixitPlayArea from './trixit/component/PlayArea';
+const library = require('./*/client.js', { mode: 'hash', resolve: 'reduce' });
 
 export function getPlayArea(game) {
-    if (game.game === 'trixit') {
-        return TrixitPlayArea;
-    }
+    return library[game.game].getPlayArea();
+}
+
+export function getLibrary() {
+    return Object.keys(library);
+}
+
+export function getConfiguration(game) {
+    return library[game].getConfiguration();
 }

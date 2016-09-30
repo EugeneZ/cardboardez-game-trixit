@@ -5,8 +5,8 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "browserify -t babelify client/main.js > public/assets/scripts/client.js && node server.js",
-    "watchify": "watchify --debug -t babelify -p livereactload client/main.js -o public/assets/scripts/client.js",
+    "start": "browserify -t babelify -t require-globify client/main.js > public/assets/scripts/client.js && node server.js",
+    "watchify": "watchify --debug -t babelify -t require-globify -p livereactload client/main.js -o public/assets/scripts/client.js",
     "nodemon": "nodemon --debug --ignore client/ --ignore public/ --ignore game/trixit/component/ server.js",
     "test": "tape -r babel-register \"test/unit/**/*.js\""
   },
@@ -27,6 +27,7 @@
     "react-tap-event-plugin": "^1.0.0",
     "redux": "^3.6.0",
     "redux-saga": "^0.11.1",
+    "require-globify": "^1.4.1",
     "socket.io-client": "^1.4.8"
   },
   "devDependencies": {

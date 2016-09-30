@@ -5,13 +5,7 @@ import MenuItem from 'material-ui/MenuItem';
 import RaisedButton from 'material-ui/RaisedButton';
 import Paper from 'material-ui/Paper';
 import autobind from 'autobind-decorator';
-
-const gameInfo = {
-    trixit: {
-        minPlayers: 3,
-        maxPlayers: 8
-    }
-};
+import { getLibrary, getConfiguration } from '../../game/clientGameProvider';
 
 @autobind
 export default class NewGame extends Component {
@@ -27,12 +21,12 @@ export default class NewGame extends Component {
         return (
             <Paper style={{ maxWidth: 500, padding: 10, margin: '0 auto' }}>
                 <SelectField value={game} floatingLabelText="Select Game" onChange={this.onChangeGame} fullWidth={true}>
-                    <MenuItem value="trixit" primaryText="Trixit"/>
+                    {getLibrary().map(name => <MenuItem key={name} value={name} primaryText={getConfiguration(name).name}/>)}
                 </SelectField>
                 <TextField floatingLabelText="Game Title" value={title} onChange={this.onChangeTitle} fullWidth={true}
                            errorText={dirtyTitle && !title.length && 'You must set a title'}/>
                 {game && this.renderPlayers()}
-                {game && title && players.length >= gameInfo[game].minPlayers &&
+                {game && title && players.length >= getConfiguration(game).minPlayers &&
                 <RaisedButton label="Create Game" onTouchTap={this.onClickCreateGame} style={{ float: 'right' }}
                               primary={true}/> }
                 <div style={{ clear: 'both' }}>&nbsp;</div>
@@ -42,7 +36,7 @@ export default class NewGame extends Component {
 
     renderPlayers() {
         const { players, game } = this.state;
-        const { maxPlayers, minPlayers } = gameInfo[game];
+        const { maxPlayers, minPlayers } = getConfiguration(game);
 
         let retval = [];
 
@@ -90,7 +84,7 @@ export default class NewGame extends Component {
 
         if (!title) {
             return;
-        } else if (players.length < gameInfo[game].minPlayers) {
+        } else if (players.length < getConfiguration(game).minPlayers) {
             return;
         }
 

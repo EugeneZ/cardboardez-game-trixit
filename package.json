@@ -47,7 +47,7 @@
     "passport-facebook": "^1.0.3",
     "passport-github": "^1.1.0",
     "passport-google-oauth20": "^1.0.0",
-    "rethinkdbdash": "^2.3.23",
+    "rethinkdbdash": "^2.3.23"
   },
   "devDependencies": {
     "livereactload": "^3.0.0",

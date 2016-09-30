@@ -5,7 +5,7 @@
 .project
 .settings
 /atlassian-ide-plugin.xml
-/config
+/config/*
 /cardboardez.iml
 /node_modules
 /npm-debug.log

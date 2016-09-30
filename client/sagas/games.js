@@ -18,7 +18,6 @@ function* gameAction(action){
         const data = yield feathers.service('/api/games').update(action.data.id, action.data);
         yield put({ type: 'GAME_ACTION_SUCCESS', data });
     } catch (error) {
-        console.log(error);
         yield put({ type: 'GAME_ACTION_FAILURE', error });
     }
 }

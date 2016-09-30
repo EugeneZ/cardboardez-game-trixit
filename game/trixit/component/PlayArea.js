@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import ReactDOM from 'react-dom';
 import autobind from 'autobind-decorator';
 import FontIcon from 'material-ui/FontIcon';
 import { BottomNavigation, BottomNavigationItem } from 'material-ui/BottomNavigation';
@@ -12,44 +13,49 @@ import Card from './Card';
 import Score from './Score';
 import feathers from '../../../client/feathers';
 
-function getStyles(context) {
-    return {
-        wrapper: {
-            backgroundImage: 'url(/assets/images/trixit/bg.jpg)',
-            minHeight: '100%',
-            marginBottom: -context.muiTheme.bottomNavigation.height
-        },
+const styles = {
+    wrapper: {
+        backgroundImage: 'url(/assets/images/trixit/bg.jpg)',
+        paddingBottom: 44,
+        minHeight: '100%'
+    },
 
-        instructions: {
-            margin: 10,
-            padding: 10
-        },
+    instructions: {
+        margin: 10,
+        padding: 10
+    },
 
-        bottomNavigation: {
-            height: context.muiTheme.bottomNavigation.height
-        },
+    bottomNavigaiton: {
+        position: 'fixed',
+        left: 0, bottom: 0, width: '100%'
+    },
 
-        dialog: {
-            width: 450
-        },
-
-        push: {
-            height: context.muiTheme.bottomNavigation.height
-        }
+    dialog: {
+        width: 450
     }
-}
+};
 
 @autobind
 export default class PlayArea extends Component {
-    static contextTypes = {
-        muiTheme: React.PropTypes.object.isRequired,
-    };
-
     state = {
         tab: 0,
         card: null,
         story: ''
     };
+
+    componentDidMount() {
+        this.node = ReactDOM.findDOMNode(this);
+        window.addEventListener('resize', this.resizeToFit);
+        this.resizeToFit();
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('resize', this.resizeToFit);
+    }
+
+    componentDidUpdate() {
+        this.resizeToFit();
+    }
 
     componentWillReceiveProps(nextProps) {
         const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
@@ -66,13 +72,12 @@ export default class PlayArea extends Component {
     }
 
     render() {
-        const styles = getStyles(this.context);
         const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
         const players = game._players.map(player => {
             return Object.assign({}, player, { name: this.props.users.filter(p=>p.id === player.id)[0].name })
         });
 
-        const progress = (players.map(p=>p.score).sort((a,b)=>a>b)[players.length - 1] / 30) * 100;
+        const progress = (players.map(p=>p.score).sort((a, b)=>a > b)[players.length - 1] / 30) * 100;
         const me = players.filter(player => player.id === this.props.user.id)[0];
         const storyteller = players.filter(player => player.id === game.storyteller)[0];
 
@@ -126,7 +131,8 @@ export default class PlayArea extends Component {
 
         let main = <Cards cards={me._private.hand} onClick={this.onClickCardInHand}/>;
         if (this.state.tab === 1) {
-            main = <Cards cards={game.board || []} onClick={this.onClickCardOnBoard} highlight={highlight} labels={labels}/>
+            main = <Cards cards={game.board || []} onClick={this.onClickCardOnBoard} highlight={highlight}
+                          labels={labels}/>
         } else if (this.state.tab === 2) {
             main = <Score players={players}/>
         }
@@ -152,9 +158,8 @@ export default class PlayArea extends Component {
                         {instructions}
                     </Paper>
                     {main}
-                    <div style={styles.push}/>
                 </div>
-                <Paper zDepth={1} style={styles.bottomNavigation}>
+                <Paper zDepth={1} style={styles.bottomNavigaiton}>
                     <BottomNavigation selectedIndex={this.state.tab}>
                         <BottomNavigationItem label="My Hand" icon={<FontIcon className="fa fa-hand-stop-o"/>}
                                               onTouchTap={() => this.setState({ tab: 0 })}/>
@@ -164,7 +169,7 @@ export default class PlayArea extends Component {
                                               onTouchTap={() => this.setState({ tab: 2 })}/>
                     </BottomNavigation>
                 </Paper>
-                <Dialog title="Tell the others a story about this card" actions={actions} modal={true}
+                <Dialog title="Tell a story" actions={actions} modal={true}
                         style={styles.dialog}
                         open={game.mode === 'story' && me === storyteller && this.state.card !== null}>
                     <TextField floatingLabelText="Your Story" value={this.state.story} onChange={this.onChangeStory}/>
@@ -229,5 +234,12 @@ export default class PlayArea extends Component {
         this.props.onSendAction(Object.assign({}, game, {
             user: feathers.get('user')
         }, data));
+    }
+
+    resizeToFit() {
+        if (!this.node) {
+            return;
+        }
+        this.node.style.height = (window.innerHeight - 110) + "px";
     }
 }

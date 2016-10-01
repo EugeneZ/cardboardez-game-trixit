@@ -73,7 +73,7 @@ export default class PlayArea extends Component {
             return Object.assign({}, player, { name: this.props.users.filter(p=>p.id === player.id)[0].name })
         });
 
-        const progress = ((9-[game.redwordsleft, game.bluewordsleft].sort((a, b)=>a < b)[0]) / 9) * 100;
+        const progress = ((9-[game.redwordsleft, game.bluewordsleft].sort()[0]) / 9) * 100;
         const me = players.filter(player => player.id === this.props.user.id)[0];
         const redleader = players.filter(player => player.id === game.redleader)[0];
         const blueleader = players.filter(player => player.id === game.blueleader)[0];
@@ -179,9 +179,14 @@ export default class PlayArea extends Component {
                                     style.backgroundColor = '#0D47A1';
                                 }
 
-                                if (game.revealed[word]) {
-                                    style.color = '#212121';
+                                if (game.revealed[word] === 'blue') {
+                                    style.color = '#0D4749';
+                                } else if (game.revealed[word] === 'red') {
+                                    style.color = '#B71C1C';
+                                } else if (game.revealed[word] === 'neutral') {
+                                    style.color = '#e5e5e5';
                                 }
+
                                 return <Paper key={word} style={style} onClick={()=>this.onPickWord(word)}>{word}</Paper>
                             }
                         )}

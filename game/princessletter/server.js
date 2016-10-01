@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const deck = require('../common/deck');
 const MathUtil = require('../common/MathUtil');
 
 const scoreNeededToWinByPlayerCount = {
@@ -25,7 +24,7 @@ function discardCard(player, card) {
 }
 
 function doNewRound(game) {
-    game._hidden.deck = deck.create(16);
+    game._hidden.deck = _.shuffle([1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8]);
     game._hidden.hidden = game._hidden.pop();
     game.public = [];
 
@@ -45,7 +44,6 @@ function doNewRound(game) {
 }
 
 module.exports.setup = function(game){
-    game._hidden.deck = _.shuffle([1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8]);
     game.turn = game.players[MathUtil.getRandomInt(game.players.length-1)];
     game.winners = null;
     game._players.forEach((player, i, players) => {

@@ -179,8 +179,9 @@ export default class PlayArea extends Component {
                                     style.backgroundColor = '#0D47A1';
                                 }
 
-                                if (game.revealed[word] === 'blue') {
-                                    style.color = '#0D4749';
+                                if (game.mode === 'gameover') {}
+                                else if (game.revealed[word] === 'blue') {
+                                    style.color = 'rgb(13, 71, 121)';
                                 } else if (game.revealed[word] === 'red') {
                                     style.color = '#B71C1C';
                                 } else if (game.revealed[word] === 'neutral') {
@@ -226,7 +227,7 @@ export default class PlayArea extends Component {
         const redteam = players.filter(player => player.red);
         const blueteam = players.filter(player => player.blue);
         const activeTeam = game.redturn ? redteam : blueteam;
-        if (game.mode === 'guess' && activeTeam.indexOf(me) !== -1) {
+        if (game.mode === 'guess' && activeTeam.indexOf(me) !== -1 && !game.revealed[word]) {
             this.sendAction({ word });
         }
     }

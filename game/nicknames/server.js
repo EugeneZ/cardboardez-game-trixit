@@ -148,6 +148,7 @@ module.exports.guess = function (guess, game) {
 
     // check for end game
     if (!game.redwordsleft || !game.bluewordsleft) {
+        game.revealed = game._hidden.words;
         game.mode = 'gameover';
         return;
     }

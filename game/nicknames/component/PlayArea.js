@@ -178,7 +178,11 @@ export default class PlayArea extends Component {
                                 } else if (game.revealed[word] === 'blue') {
                                     style.backgroundColor = '#0D47A1';
                                 }
-                                return <Paper key={word} style={style} onClick={()=>this.onPickWord(word)}>{game.revealed[word] ? '' : word}</Paper>
+
+                                if (game.revealed[word]) {
+                                    style.color = '#212121';
+                                }
+                                return <Paper key={word} style={style} onClick={()=>this.onPickWord(word)}>{word}</Paper>
                             }
                         )}
                     </div>
@@ -197,6 +201,7 @@ export default class PlayArea extends Component {
 
     onSendClue() {
         this.sendAction({ clue: this.state.clue });
+        this.setState({ clue: ''});
     }
 
     onRejectClue() {

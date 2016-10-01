@@ -128,10 +128,8 @@ module.exports.guess = function (guess, game) {
         endturn = true;
     } else if (game.redturn && game._hidden.words[guess.word] === 'red') { // correct!
         game.guesses++;
-        game.redwordsleft--;
     } else if (!game.redturn && game._hidden.words[guess.word] === 'blue') { // correct!
         game.guesses++;
-        game.bluewordsleft--;
     } else { // incorrect :(
         endturn = true;
     }
@@ -140,7 +138,13 @@ module.exports.guess = function (guess, game) {
         endturn = true;
     }
 
-    game.revealed[guess.word] = game._hidden.words[guess.word];
+    const team = game.revealed[guess.word] = game._hidden.words[guess.word];
+
+    if (team === 'red') {
+        game.redwordsleft--;
+    } else if (team === 'blue') {
+        game.bluewordsleft--;
+    }
 
     // check for end game
     if (!game.redwordsleft || !game.bluewordsleft) {

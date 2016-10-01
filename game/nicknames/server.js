@@ -16,8 +16,6 @@ module.exports.setup = function (game) {
             game._hidden.words[word] = 'neutral';
         }
     }
-    game._hidden.red = [];
-    game._hidden.blue = [];
 
     let used = [];
     const getUnusedWord = ()=> {
@@ -30,21 +28,15 @@ module.exports.setup = function (game) {
     };
 
     ['red', 'blue'].forEach(color =>
-        _.times(8, () => {
-            let word = getUnusedWord();
-            game._hidden[color].push(word);
-            game._hidden.words[word] = color;
-        })
+        _.times(8, () => game._hidden.words[getUnusedWord()] = color)
     );
 
     let lastword = getUnusedWord();
     if (MathUtil.getRandomInt(1)) {
-        game._hidden.red.push(lastword);
         game._hidden.words[lastword] = 'red';
         game.redturn = true;
         game.redwordsleft++;
     } else {
-        game._hidden.blue.push(lastword);
         game._hidden.words[lastword] = 'blue';
         game.blueturn = false;
         game.bluewordsleft++;
@@ -56,11 +48,11 @@ module.exports.setup = function (game) {
     game._players.forEach((player, i) => {
         if (i === 0) {
             player.redleader = true;
-            player._private.words = game._hidden;
+            player._private.words = game._hidden.words;
             game.redleader = player.id;
         } else if (i === 1) {
             player.blueleader = true;
-            player._private.words = game._hidden;
+            player._private.words = game._hidden.words;
             game.blueleader = player.id;
         } else if (i === game._players.length - 1 && game._players.length % 2 !== 0) {
             MathUtil.getRandomInt(1) ? player.red = true : player.blue = true;
@@ -78,6 +70,7 @@ module.exports.clue = function (clue, game) {
     }
 
     game.guesses = 0;
+    game.maxguesses = 0;
     game.rejectedClue = false;
     game._hidden.clue = clue.clue;
 
@@ -110,7 +103,9 @@ module.exports.verify = function (verify, game) {
 };
 
 module.exports.guess = function (guess, game) {
-    if (guess.user.id === game.redleader || guess.user.id === game.blueleader || game.board.indexOf(guess.word) === -1 || game.revealed[guess.word]) { // TODO: Add check that other teams' members aren't guessing
+    if ((!guess.pass && (game.board.indexOf(guess.word) === -1 || game.revealed[guess.word])) ||
+        (game.redturn && !game._players.filter(p=>p.red && p.id===guess.user.id).length) ||
+        (!game.redturn && !game._players.filter(p=>p.blue && p.id===guess.user.id).length)) {
         throw new Error('Cheating (or bug?) detected for ' + guess.user.id);
     }
 
@@ -141,7 +136,7 @@ module.exports.guess = function (guess, game) {
         endturn = true;
     }
 
-    if (game.maxguesses && game.guesses >= game.maxguesses) {
+    if (game.maxguesses && game.guesses > game.maxguesses) {
         endturn = true;
     }
 

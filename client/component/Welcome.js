@@ -1,7 +1,6 @@
 import React from 'react';
 import RaisedButton from 'material-ui/RaisedButton';
 import FontIcon from 'material-ui/FontIcon';
-import Paper from 'material-ui/Paper';
 
 export default ()=>
     <div style={{ padding: '5%' }}>
@@ -12,5 +11,7 @@ export default ()=>
                           icon={<FontIcon className="fa fa-facebook"/>} style={{ margin: '10px auto' }}/>
             <RaisedButton primary={true} label="Login with Github" href="/auth/github"
                           icon={<FontIcon className="fa fa-github"/>} style={{ margin: '10px auto' }}/>
+            <RaisedButton primary={true} label="Login with Vimeo" href="/auth/vimeo"
+                          icon={<FontIcon className="fa fa-vimeo"/>} style={{ margin: '10px auto' }}/>
         </div>
     </div>;

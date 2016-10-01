@@ -3,6 +3,7 @@ const authentication = require('feathers-authentication');
 const facebookStrategy = require('passport-facebook').Strategy;
 const googleStrategy = require('passport-google-oauth20').Strategy;
 const githubStrategy = require('passport-github').Strategy;
+const vimeoStrategy = require('passport-vimeo-oauth2').Strategy;
 
 /**
  * Configures the authentication service (/auth/*) used for passport-style SSO
@@ -41,6 +42,12 @@ module.exports = function(app){
             strategy: githubStrategy,
             clientID: config.auth.github.clientID,
             clientSecret: config.auth.github.clientSecret,
+        },
+
+        vimeo: {
+            strategy: vimeoStrategy,
+            clientID: config.auth.vimeo.clientID,
+            clientSecret: config.auth.vimeo.clientSecret,
         }
     });
 };

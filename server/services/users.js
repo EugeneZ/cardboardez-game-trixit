@@ -28,13 +28,15 @@ module.exports = function(app, dbPromise) {
 
         app.service(ENDPOINT).before({
             create(hook) {
-                const { facebook, github, google } = hook.data;
+                const { facebook, github, google, vimeo } = hook.data;
                 if (github) {
                     hook.data.name = github.login;
                 } else if (facebook) {
                     hook.data.name = facebook.name;
                 } else if (google) {
                     hook.data.name = google.displayName;
+                } else if (vimeo) {
+                    hook.data.name = vimeo.name;
                 } else {
                     console.log(require('util').inspect(hook));
                 }

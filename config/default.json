@@ -10,11 +10,15 @@
       "clientID": "DEFAULT_APP_ID",
       "clientSecret": "APP_SECRET"
     },
-    "twitter": {
+    "github": {
       "clientID": "DEFAULT_CONSUMER_KEY",
       "clientSecret": "CONSUMER_SECRET"
     },
     "google": {
+      "clientID": "DEFAULT_CLIENT_ID",
+      "clientSecret": "DEFAULT_SECRET"
+    },
+    "vimeo": {
       "clientID": "DEFAULT_CLIENT_ID",
       "clientSecret": "DEFAULT_SECRET"
     }

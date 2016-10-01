@@ -1,9 +1,14 @@
 const config = require('config');
+const fs = require('fs');
+const path = require('path');
+
 const r = require('rethinkdbdash')({
     servers: config.db.hosts,
     db: config.db.name,
-    user: config.db.user,
-    password: config.db.password
+    authKey: config.db.authKey,
+    ssl: config.db.cafile ? {
+        ca: [ fs.readFileSync(path.join(__dirname, '..', 'config', config.db.cafile)) ]
+    } : undefined
 });
 
 const INITIAL_TABLES = [

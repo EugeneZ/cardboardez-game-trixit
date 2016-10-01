@@ -54,6 +54,7 @@
   "devDependencies": {
     "livereactload": "^3.0.0",
     "nodemon": "^1.10.2",
+    "react-proxy": "^1.1.8",
     "tape": "^4.6.0"
   }
 }

@@ -34,8 +34,8 @@ export default class GamesList extends Component {
         const { users, onGotoGame } = this.props;
         const games = this.props.games
             .slice()
-            .filter(game => this.state.showCompleted ^ game.mode === 'gameover')
-            .sort((a, b)=>a.updated < b.updated);
+            .filter(game => !this.state.showCompleted ^ game.mode === 'gameover')
+            .sort((a, b)=>parseInt(b.updated.replace(/[^0-9]/g,''), 10) - parseInt(a.updated.replace(/[^0-9]/g,''), 10));
 
         if (!users || !users.length || !games || !games.length) {
             return this.renderNoGames();

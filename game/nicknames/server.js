@@ -1,10 +1,6 @@
 const _ = require('lodash');
 const words = require('./words');
 
-function getRandomInt(max) {
-    return Math.floor(Math.random() * (Math.floor(max) + 1));
-}
-
 module.exports.setup = function (game) {
     game.redwordsleft = 8;
     game.bluewordsleft = 8;
@@ -13,8 +9,8 @@ module.exports.setup = function (game) {
     game.revealed = {};
     game.board = [];
     while (game.board.length < 25) {
-        const word = words[getRandomInt(399)];
-        if (game.board.indexOf(word) === -1) {
+        const word = words[_.random(399)];
+        if (!game.board.includes(word)) {
             game.board.push(word);
             game._hidden.words[word] = 'neutral';
         }
@@ -23,8 +19,8 @@ module.exports.setup = function (game) {
     let used = [];
     const getUnusedWord = ()=> {
         let word;
-        while (!word || used.indexOf(word) !== -1) {
-            word = game.board[getRandomInt(24)];
+        while (!word || used.includes(word)) {
+            word = game.board[_.random(24)];
         }
         used.push(word);
         return word;
@@ -35,7 +31,7 @@ module.exports.setup = function (game) {
     );
 
     let lastword = getUnusedWord();
-    if (getRandomInt(1)) {
+    if (_.random()) {
         game._hidden.words[lastword] = 'red';
         game.redturn = true;
         game.redwordsleft++;
@@ -58,7 +54,7 @@ module.exports.setup = function (game) {
             player._private.words = game._hidden.words;
             game.blueleader = player.id;
         } else if (i === game._players.length - 1 && game._players.length % 2 !== 0) {
-            getRandomInt(1) ? player.red = true : player.blue = true;
+            _.random() ? player.red = true : player.blue = true;
         } else {
             i % 2 ? player.blue = true : player.red = true;
         }
@@ -106,7 +102,7 @@ module.exports.verify = function (verify, game) {
 };
 
 module.exports.guess = function (guess, game) {
-    if ((!guess.pass && (game.board.indexOf(guess.word) === -1 || game.revealed[guess.word])) ||
+    if ((!guess.pass && (!game.board.includes(guess.word) || game.revealed[guess.word])) ||
         (game.redturn && !game._players.filter(p=>p.red && p.id===guess.user.id).length) ||
         (!game.redturn && !game._players.filter(p=>p.blue && p.id===guess.user.id).length)) {
         throw new Error('Cheating (or bug?) detected for ' + guess.user.id);

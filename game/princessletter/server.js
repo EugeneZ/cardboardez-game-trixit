@@ -10,20 +10,20 @@ const scoreNeededToWinByPlayerCount = {
     8: 2
 };
 
-function getRandomInt(max) {
-    return Math.floor(Math.random() * (Math.floor(max) + 1));
-}
-
-function forPlayer(id, cb, game) {
-    game._players.forEach(player => {
-        if (player.id === id) {
-            cb(player);
+function forPlayer(id, cb, { _players }) {
+    for (let i = 0; i < _players.length; i++) {
+        if (_players[i].id === id) {
+            cb(_players[i]);
+            break;
         }
-    });
+    }
 }
 
 function discardCard(player, card) {
-    player.discards.push(player._private.hand.splice(player._private.hand.indexOf(card), 1)[0]);
+    player.discards.push(
+        player._private.hand.splice(player._private.hand.indexOf(card), 1)[0]
+    );
+    player.discardtotal += player.discards[player.discards.length - 1];
 }
 
 function doNewRound(game) {
@@ -40,6 +40,7 @@ function doNewRound(game) {
         player.dead = false;
         player.protected = false;
         player.discards = [];
+        player.discardtotal = 0;
         player._private.hand.push(game._hidden.deck.pop());
     });
 
@@ -47,12 +48,12 @@ function doNewRound(game) {
 }
 
 module.exports.setup = function(game){
-    game.turn = game.players[getRandomInt(game.players.length-1)];
+    game.turn = game.players[_.random(game.players.length-1)];
     game.winners = null;
     game._players.forEach((player, i, players) => {
         player.score = 0;
         player._private.hand = [];
-        player.playerToLeft = i === players.length - 1 ? players[0].id : players[i+1].id;
+        player.playerToLeft = players[i === players.length - 1 ? 0 : i + 1].id;
     });
     doNewRound(game);
 };
@@ -64,16 +65,14 @@ module.exports.turn = function(turn, game){
 
     let livePlayers = game._players.filter(player => !player.dead);
     const targetablePlayers = livePlayers.filter(player => !player.protected);
-    let thisPlayer = livePlayers.filter(player => player.id === turn.user.id)[0];
+    let thisPlayer = livePlayers.find(player => player.id === turn.user.id);
     thisPlayer.guess = null;
     thisPlayer.protected = false;
 
     // card effect
-    const target = targetablePlayers.filter(player => player.id === turn.target)[0];
-    thisPlayer.target = target && target.id;
-    game.target = target && target.id;
-    game.lastPlayed = turn.card;
-    discardCard(thisPlayer, turn.card);
+    const target = targetablePlayers.find(player => player.id === turn.target);
+    let discarded = false;
+
     if (turn.card === 1) {
         if ((!target && targetablePlayers.length) || turn.guess === 1){
             throw new Error('Cheating (or bug?) detected for ' + turn.user.id);
@@ -93,7 +92,7 @@ module.exports.turn = function(turn, game){
     } else if (turn.card === 4) {
         thisPlayer.protected = true;
     } else if (turn.card === 5) {
-        if (!target || thisPlayer._private.hand.indexOf(7) !== -1){
+        if (!target || thisPlayer._private.hand.includes(7)){
             throw new Error('Cheating (or bug?) detected for ' + turn.user.id);
         } else if (game._hidden.deck.length) {
             target._private.hand = [game._hidden.deck.pop()];
@@ -101,9 +100,11 @@ module.exports.turn = function(turn, game){
             target._private.hand = [game._hidden.hidden];
         }
     } else if (turn.card === 6) {
-        if ((!target && targetablePlayers.length) || thisPlayer._private.hand.indexOf(7) !== -1) {
+        if ((!target && targetablePlayers.length) || thisPlayer._private.hand.includes(7)) {
             throw new Error('Cheating (or bug?) detected for ' + turn.user.id);
         } else if (target !== thisPlayer) {
+            discardCard(thisPlayer, turn.card);
+            discarded = true;
             const temp = target._private.hand;
             target._private.hand = thisPlayer._private.hand;
             thisPlayer._private.hand = temp;
@@ -112,18 +113,26 @@ module.exports.turn = function(turn, game){
         throw new Error('Cheating (or bug?) detected for ' + turn.user.id);
     }// countess doesn't need anything special
 
+    thisPlayer.target = target && target.id;
+    game.target = target && target.id;
+    game.lastPlayed = turn.card;
+
+    if (!discarded) {
+        discardCard(thisPlayer, turn.card);
+    }
+
     // check for round end
     livePlayers = game._players.filter(player => !player.dead);
     if (game._hidden.deck.length === 0 || livePlayers.length === 1) {
         livePlayers.forEach(player => player.hand = player._private.hand);
-        const bestcard = livePlayers.map(player => player.hand[0]).sort()[livePlayers.length-1];
+        const bestcard = _.max(livePlayers.map(player => player.hand[0]));
         const playersWithBestCard = livePlayers.filter(player => player.hand[0] === bestcard);
         if (playersWithBestCard.length === 1) {
             playersWithBestCard[0].score++;
             game.winners = [playersWithBestCard[0].id];
         } else {
-            const bestdiscard = playersWithBestCard.map(player => player.discards.reduce((total, i) => total + i, 0)).sort()[playersWithBestCard.length-1];
-            const playersWithBestDiscard = playersWithBestCard.filter(player => player.discards.reduce((total, i) => total + i, 0) === bestdiscard);
+            const bestdiscard = _.max(playersWithBestCard.map(player => player.discardtotal));
+            const playersWithBestDiscard = playersWithBestCard.filter(player => player.discardtotal === bestdiscard);
             playersWithBestDiscard.forEach(player => player.score++);
             game.winners = playersWithBestDiscard.map(player => player.id);
         }
@@ -141,7 +150,7 @@ module.exports.turn = function(turn, game){
     // next player
     do {
         game.turn = thisPlayer.playerToLeft;
-        thisPlayer = livePlayers.filter(player => player.id === game.turn)[0];
+        thisPlayer = livePlayers.find(player => player.id === game.turn);
     } while (!thisPlayer);
 
     thisPlayer.protected = false;
@@ -154,7 +163,7 @@ module.exports.round = function(ready, game){
     }, game);
 
     if (game._players.every(player => player.ready)) {
-        forPlayer(game.winners[getRandomInt(game.winners.length-1)],
+        forPlayer(game.winners[_.random(game.winners.length-1)],
             player => game.turn = player.id,
             game);
         doNewRound(game);

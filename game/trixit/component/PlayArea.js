@@ -11,6 +11,7 @@ import TextField from 'material-ui/TextField';
 import Cards from './Cards';
 import Card from './Card';
 import Score from './Score';
+import max from 'lodash/max';
 
 const styles = {
     wrapper: {
@@ -31,8 +32,8 @@ const styles = {
 
     dialog: {
         wrapper: {
-            paddingTop:'0 !important',
-            marginTop:'-65px !important',
+            paddingTop: '0 !important',
+            marginTop: '-65px !important',
             bottom: '0 !important',
             overflow: 'scroll !important',
             height: 'auto !important'
@@ -74,9 +75,9 @@ export default class PlayArea extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
-        const nextGame = nextProps.games.filter(game => game.id === nextProps.params.id)[0];
-        if (game.mode !== nextGame.mode) {
+        const game = this.props.games.find(game => game.id === this.props.params.id);
+        const nextGame = nextProps.games.find(game => game.id === nextProps.params.id);
+        if (game.id === nextGame.id && game.mode !== nextGame.mode) {
             if (nextGame.mode === 'voting') {
                 this.setState({ tab: 1 });
             } else if (nextGame.mode === 'story') {
@@ -91,14 +92,10 @@ export default class PlayArea extends Component {
         if (!this.props.user || !this.props.user.id) {
             return null;
         }
-        const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
-        const players = game._players.map(player => {
-            return Object.assign({}, player, { name: this.props.users.filter(p=>p.id === player.id)[0].name })
-        });
 
-        const progress = (players.map(p=>p.score).sort((a, b)=>a > b)[players.length - 1] / 30) * 100;
-        const me = players.filter(player => player.id === this.props.user.id)[0];
-        const storyteller = players.filter(player => player.id === game.storyteller)[0];
+        const { game, players, me, storyteller } = this.getCommonValues(true);
+
+        const progress = (players.map(p=>p.score).sort((a, b)=>b - a)[0] / 30) * 100;
         const unready = players.filter(player => !player.ready).map(player => player.name).join(', ');
         const unreadyIgnoringStoryteller = players.filter(player => !player.ready && player !== storyteller).map(player => player.name).join(', ');
 
@@ -137,8 +134,8 @@ export default class PlayArea extends Component {
                 color = styles.actionNeeded;
             }
         } else if (game.mode === 'gameover') {
-            const scores = players.map(p=>p.score).sort();
-            const winners = players.filter(player => player.score === scores[players.length - 1]).map(player => player.name);
+            const highscore = max(players.map(p=>p.score));
+            const winners = players.filter(player => player.score === highscore).map(player => player.name);
             instructions = `The game is over! The winner${winners.length > 1 ? 's are' : ' is'}: ${winners.join(', ')}`;
         }
 
@@ -147,7 +144,7 @@ export default class PlayArea extends Component {
             highlight = storyteller.suggestion;
             game.board.forEach(card => {
                 labels[card] = {
-                    top: players.filter(player => player.suggestion === card)[0].name,
+                    top: players.find(player => player.suggestion === card).name,
                     bottom: players.filter(player => player.vote === card).map(player => player.name)
                 };
             });
@@ -199,7 +196,8 @@ export default class PlayArea extends Component {
                 </Paper>
                 <Dialog title="Tell a story" actions={actions} modal={true} repositionOnUpdate={false}
                         autoDetectWindowHeight={true} autoScrollBodyContent={true}
-                        contentStyle={styles.dialog.content} bodyStyle={styles.dialog.body} style={styles.dialog.wrapper}
+                        contentStyle={styles.dialog.content} bodyStyle={styles.dialog.body}
+                        style={styles.dialog.wrapper}
                         open={game.mode === 'story' && me === storyteller && this.state.card !== null}>
                     <TextField floatingLabelText="Your Story" value={this.state.story} onChange={this.onChangeStory}/>
                     <Card card={this.state.card} onClick={()=> {
@@ -214,10 +212,7 @@ export default class PlayArea extends Component {
             return this.setState({ zoom: null });
         }
 
-        const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
-        const players = game._players;
-        const me = players.filter(player => player.id === this.props.user.id)[0];
-        const storyteller = players.filter(player => player.id === game.storyteller)[0];
+        const { game, me, storyteller } = this.getCommonValues();
 
         if (game.mode === 'story' && me === storyteller) {
             this.setState({ card });
@@ -233,10 +228,7 @@ export default class PlayArea extends Component {
             return this.setState({ zoom: null });
         }
 
-        const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
-        const players = game._players;
-        const me = players.filter(player => player.id === this.props.user.id)[0];
-        const storyteller = players.filter(player => player.id === game.storyteller)[0];
+        const { game, me, storyteller } = this.getCommonValues();
 
         if (game.mode === 'voting' && me !== storyteller && card !== me._private.suggestion) {
             this.sendAction({ card });
@@ -275,5 +267,16 @@ export default class PlayArea extends Component {
 
     onZoom(props) {
         this.setState({ zoom: this.state.zoom ? null : props });
+    }
+
+    getCommonValues(playersNeedNames) {
+        const game = this.props.games.find(game => game.id === this.props.params.id);
+        const players = !playersNeedNames ? game._players : game._players.map(
+            player => Object.assign({ name: this.props.users.find(p=>p.id === player.id).name }, player)
+        );
+        const me = players.find(player => player.id === this.props.user.id);
+        const storyteller = players.find(player => player.id === game.storyteller);
+
+        return { game, me, storyteller, players };
     }
 }

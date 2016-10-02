@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const MathUtil = require('../common/MathUtil');
 
 const scoreNeededToWinByPlayerCount = {
     2: 7,
@@ -10,6 +9,10 @@ const scoreNeededToWinByPlayerCount = {
     7: 2,
     8: 2
 };
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * (Math.floor(max) + 1));
+}
 
 function forPlayer(id, cb, game) {
     game._players.forEach(player => {
@@ -44,7 +47,7 @@ function doNewRound(game) {
 }
 
 module.exports.setup = function(game){
-    game.turn = game.players[MathUtil.getRandomInt(game.players.length-1)];
+    game.turn = game.players[getRandomInt(game.players.length-1)];
     game.winners = null;
     game._players.forEach((player, i, players) => {
         player.score = 0;
@@ -151,7 +154,7 @@ module.exports.round = function(ready, game){
     }, game);
 
     if (game._players.every(player => player.ready)) {
-        forPlayer(game.winners[MathUtil.getRandomInt(game.winners.length-1)],
+        forPlayer(game.winners[getRandomInt(game.winners.length-1)],
             player => game.turn = player.id,
             game);
         doNewRound(game);

@@ -1,5 +1,8 @@
 const _ = require('lodash');
-const MathUtil = require('../common/MathUtil');
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * (Math.floor(max) + 1));
+}
 
 function forPlayer(id, cb, game) {
     game._players.forEach(player => {
@@ -11,7 +14,7 @@ function forPlayer(id, cb, game) {
 
 module.exports.setup = function(game){
     game._hidden.deck = _.shuffle(_.times(450, Number));
-    game.storyteller = game.players[MathUtil.getRandomInt(game.players.length-1)];
+    game.storyteller = game.players[getRandomInt(game.players.length-1)];
     game._players.forEach((player, i, players) => {
         player.score = 0;
         player.playerToLeft = i === players.length - 1 ? players[0].id : players[i+1].id;

@@ -1,6 +1,9 @@
 const _ = require('lodash');
-const MathUtil = require('../common/MathUtil');
 const words = require('./words');
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * (Math.floor(max) + 1));
+}
 
 module.exports.setup = function (game) {
     game.redwordsleft = 8;
@@ -10,7 +13,7 @@ module.exports.setup = function (game) {
     game.revealed = {};
     game.board = [];
     while (game.board.length < 25) {
-        const word = words[MathUtil.getRandomInt(399)];
+        const word = words[getRandomInt(399)];
         if (game.board.indexOf(word) === -1) {
             game.board.push(word);
             game._hidden.words[word] = 'neutral';
@@ -21,7 +24,7 @@ module.exports.setup = function (game) {
     const getUnusedWord = ()=> {
         let word;
         while (!word || used.indexOf(word) !== -1) {
-            word = game.board[MathUtil.getRandomInt(24)];
+            word = game.board[getRandomInt(24)];
         }
         used.push(word);
         return word;
@@ -32,7 +35,7 @@ module.exports.setup = function (game) {
     );
 
     let lastword = getUnusedWord();
-    if (MathUtil.getRandomInt(1)) {
+    if (getRandomInt(1)) {
         game._hidden.words[lastword] = 'red';
         game.redturn = true;
         game.redwordsleft++;
@@ -55,7 +58,7 @@ module.exports.setup = function (game) {
             player._private.words = game._hidden.words;
             game.blueleader = player.id;
         } else if (i === game._players.length - 1 && game._players.length % 2 !== 0) {
-            MathUtil.getRandomInt(1) ? player.red = true : player.blue = true;
+            getRandomInt(1) ? player.red = true : player.blue = true;
         } else {
             i % 2 ? player.blue = true : player.red = true;
         }

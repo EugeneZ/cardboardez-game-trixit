@@ -5,8 +5,11 @@ import * as trixit from '../../../game/trixit/server';*/
 
 const tape = require('tape');
 const _ = require('lodash');
-const getRandomInt = require('../../../game/common/MathUtil').getRandomInt;
 const trixit = require('../../../game/trixit/server');
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * (Math.floor(max) + 1));
+}
 
 function getNewGame(numberOfPlayers) {
     const game = {

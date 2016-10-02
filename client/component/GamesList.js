@@ -75,12 +75,22 @@ export default class GamesList extends Component {
     }
 
     renderNoGames() {
-        return (
-            <Paper style={{ maxWidth: 500, padding: 10, margin: '0 auto' }}>
-                <p>Welcome to CardboardEZ. Get started by creating your first game.</p>
-                <RaisedButton primary={true} label="Create a game" onClick={this.props.onGotoNewGame}/>
-            </Paper>
-        );
+        if (!this.props.games || !this.props.games.length) {
+            return (
+                <Paper style={{ maxWidth: 500, padding: 10, margin: '0 auto' }}>
+                    <p>Welcome to CardboardEZ. Get started by creating your first game.</p>
+                    <RaisedButton primary={true} label="Create a game" onClick={this.props.onGotoNewGame}/>
+                </Paper>
+            );
+        } else {
+            return (
+                <Paper style={{ maxWidth: 500, padding: 10, margin: '0 auto' }}>
+                    <p>You don't have any active games. You can create one or view completed games.</p>
+                    <Toggle label="Show Completed" style={{ margin: 16, width: 200 }} onToggle={this.onToggleCompleted} toggled={this.state.showCompleted}/>
+                    <RaisedButton primary={true} label="Create a game" onClick={this.props.onGotoNewGame}/>
+                </Paper>
+            );
+        }
     }
 
     onToggleCompleted() {

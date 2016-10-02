@@ -29,7 +29,7 @@ function getNewGame(numberOfPlayers) {
     }));
 
     return game;
-};
+}
 
 tape('setup', t => {
     t.plan(((8 + 7 + 6 + 5 + 4 + 3) * 4) + (6 * 5)); // first part is all the player combos, second part is the general game combos multiplied by the number of players combos

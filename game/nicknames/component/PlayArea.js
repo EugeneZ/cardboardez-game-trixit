@@ -1,11 +1,8 @@
 import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
+import _ from 'lodash';
 import autobind from 'autobind-decorator';
-import FontIcon from 'material-ui/FontIcon';
-import { BottomNavigation, BottomNavigationItem } from 'material-ui/BottomNavigation';
 import Paper from 'material-ui/Paper';
 import LinearProgress from 'material-ui/LinearProgress';
-import Dialog from 'material-ui/Dialog';
 import RaisedButton from 'material-ui/RaisedButton';
 import TextField from 'material-ui/TextField';
 
@@ -28,8 +25,8 @@ const styles = {
 
     dialog: {
         wrapper: {
-            paddingTop:'0 !important',
-            marginTop:'-65px !important',
+            paddingTop: '0 !important',
+            marginTop: '-65px !important',
             bottom: '0 !important',
             overflow: 'scroll !important',
             height: 'auto !important'
@@ -68,15 +65,15 @@ export default class PlayArea extends Component {
         if (!this.props.user || !this.props.user.id) {
             return null;
         }
-        const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
-        const players = game._players.map(player => {
-            return Object.assign({}, player, { name: this.props.users.filter(p=>p.id === player.id)[0].name })
-        });
+        const game = this.props.games.find(game => game.id === this.props.params.id);
+        const players = game._players.map(
+            player => Object.assign({ name: this.props.users.find(p=>p.id === player.id).name, player })
+        );
 
-        const progress = ((9-[game.redwordsleft, game.bluewordsleft].sort()[0]) / 9) * 100;
-        const me = players.filter(player => player.id === this.props.user.id)[0];
-        const redleader = players.filter(player => player.id === game.redleader)[0];
-        const blueleader = players.filter(player => player.id === game.blueleader)[0];
+        const progress = ((9 - _.min([game.redwordsleft, game.bluewordsleft])) / 9) * 100;
+        const me = players.find(player => player.id === this.props.user.id);
+        const redleader = players.find(player => player.id === game.redleader);
+        const blueleader = players.find(player => player.id === game.blueleader);
         const redteam = players.filter(player => player.red);
         const blueteam = players.filter(player => player.blue);
         const redteamnames = redteam.map(player => player.name).join(',');
@@ -87,17 +84,27 @@ export default class PlayArea extends Component {
         const currentteamnames = game.redturn ? redteamnames : blueteamnames;
         const otherteamnames = game.redturn ? blueteamnames : redteamnames;
 
+        const bgcolor = {
+            backgroundColor: me.redleader || me.red ? '#FFCDD2' : '#BBDEFB',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+        };
+
         let instructions = 'Loading...';
         let color = {};
-        let bgcolor =  { backgroundColor:  me.redleader || me.red ? '#FFCDD2' : '#BBDEFB', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0};
+
         if (game.mode === 'clue') {
             if (me === activeleader) {
                 instructions = (
                     <div>
-                        <strong>{game.rejectedClue ? 'Your clue was rejected! ': ''}</strong>
+                        <strong>{game.rejectedClue ? 'Your clue was rejected! ' : ''}</strong>
                         Give a clue for {myteammates}. It should end with a number or "infinity".
                         <div>
-                            <TextField value={this.state.clue} onChange={this.onChangeClue} floatingLabelText="Enter clue here"/>
+                            <TextField value={this.state.clue} onChange={this.onChangeClue}
+                                       floatingLabelText="Enter clue here"/>
                             &nbsp;
                             <RaisedButton label="Send Clue" onClick={this.onSendClue} primary={true}/>
                         </div>
@@ -130,7 +137,7 @@ export default class PlayArea extends Component {
                 instructions = (
                     <div>{currentteamnames}: The clue is: "{game.clue}". Guess a card{game.guesses ? ' or pass' : ''}!
                         {game.maxguesses ? ' ' + (game.maxguesses - game.guesses) + ' guesses left (not including bonus guess)' : ' Infinite guesses left... good luck.'}
-                        {game.guesses ? <div><RaisedButton label="Pass" onClick={this.onPass}/></div>: ''}
+                        {game.guesses ? <div><RaisedButton label="Pass" onClick={this.onPass}/></div> : ''}
                     </div>
                 );
                 color = styles.actionNeeded;
@@ -158,7 +165,7 @@ export default class PlayArea extends Component {
                     <Paper zDepth={4} style={Object.assign({}, styles.instructions, color)}>
                         {instructions}
                     </Paper>
-                    <div style={{ display: 'flex', flexWrap: 'wrap'}}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
                         {game.board.map(
                             word => {
                                 const style = Object.assign({}, styles.card);
@@ -179,7 +186,8 @@ export default class PlayArea extends Component {
                                     style.backgroundColor = '#0D47A1';
                                 }
 
-                                if (game.mode === 'gameover') {}
+                                if (game.mode === 'gameover') {
+                                }
                                 else if (game.revealed[word] === 'blue') {
                                     style.color = 'rgb(13, 71, 121)';
                                 } else if (game.revealed[word] === 'red') {
@@ -188,7 +196,8 @@ export default class PlayArea extends Component {
                                     style.color = '#e5e5e5';
                                 }
 
-                                return <Paper key={word} style={style} onClick={()=>this.onPickWord(word)}>{word}</Paper>
+                                return <Paper key={word} style={style}
+                                              onClick={()=>this.onPickWord(word)}>{word}</Paper>
                             }
                         )}
                     </div>
@@ -207,7 +216,7 @@ export default class PlayArea extends Component {
 
     onSendClue() {
         this.sendAction({ clue: this.state.clue });
-        this.setState({ clue: ''});
+        this.setState({ clue: '' });
     }
 
     onRejectClue() {
@@ -219,30 +228,21 @@ export default class PlayArea extends Component {
     }
 
     onPickWord(word) {
-        const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
-        const players = game._players.map(player => {
-            return Object.assign({}, player, { name: this.props.users.filter(p=>p.id === player.id)[0].name })
-        });
-        const me = players.filter(player => player.id === this.props.user.id)[0];
-        const redteam = players.filter(player => player.red);
-        const blueteam = players.filter(player => player.blue);
-        const activeTeam = game.redturn ? redteam : blueteam;
-        if (game.mode === 'guess' && activeTeam.indexOf(me) !== -1 && !game.revealed[word]) {
+        const game = this.props.games.find(game => game.id === this.props.params.id);
+        const me = game._players.find(player => player.id === this.props.user.id);
+        const isMyTurn = (me.red && game.redturn) || (me.blue && !game.redturn);
+
+        if (game.mode === 'guess' && isMyTurn && !game.revealed[word]) {
             this.sendAction({ word });
         }
     }
 
     onPass() {
-        const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
-        const players = game._players.map(player => {
-            return Object.assign({}, player, { name: this.props.users.filter(p=>p.id === player.id)[0].name })
-        });
-        const me = players.filter(player => player.id === this.props.user.id)[0];
-        const redteam = players.filter(player => player.red);
-        const blueteam = players.filter(player => player.blue);
-        const activeTeam = game.redturn ? redteam : blueteam;
+        const game = this.props.games.find(game => game.id === this.props.params.id);
+        const me = game._players.find(player => player.id === this.props.user.id);
+        const isMyTurn = (me.red && game.redturn) || (me.blue && !game.redturn);
 
-        if (game.mode === 'guess' && activeTeam.indexOf(me) !== -1 && game.guesses) {
+        if (game.mode === 'guess' && isMyTurn !== -1 && game.guesses) {
             this.sendAction({ pass: true });
         }
     }

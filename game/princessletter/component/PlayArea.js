@@ -8,6 +8,7 @@ import LinearProgress from 'material-ui/LinearProgress';
 import Dialog from 'material-ui/Dialog';
 import RaisedButton from 'material-ui/RaisedButton';
 import TextField from 'material-ui/TextField';
+import scoreNeededToWinByPlayerCount from '../scoreNeededToWinByPlayerCount';
 
 const styles = {
     bg: {
@@ -28,8 +29,8 @@ const styles = {
 
     dialog: {
         wrapper: {
-            paddingTop:'0 !important',
-            marginTop:'-65px !important',
+            paddingTop: '0 !important',
+            marginTop: '-65px !important',
             bottom: '0 !important',
             overflow: 'scroll !important',
             height: 'auto !important'
@@ -70,10 +71,10 @@ export default class PlayArea extends Component {
         }
         const game = this.props.games.filter(game => game.id === this.props.params.id)[0];
         const players = game._players.map(player => {
-            return Object.assign({}, player, { name: this.props.users.filter(p=>p.id === player.id)[0].name })
+            return Object.assign({ name: this.props.users.filter(p=>p.id === player.id)[0].name }, player)
         });
 
-        const progress = ((9-[game.redwordsleft, game.bluewordsleft].sort((a, b)=>a < b)[0]) / 9) * 100;
+        const progress = ((9 - [game.redwordsleft, game.bluewordsleft].sort((a, b)=>a < b)[0]) / 9) * 100;
         const me = players.filter(player => player.id === this.props.user.id)[0];
         const redleader = players.filter(player => player.id === game.redleader)[0];
         const blueleader = players.filter(player => player.id === game.blueleader)[0];
@@ -89,26 +90,11 @@ export default class PlayArea extends Component {
 
         let instructions = 'Loading...';
         let color = {};
-        let bgcolor =  { backgroundColor:  '#FFCDD2', top: 0, left: 0, right: 0, bottom: 0};
-        if (game.mode === 'clue') {
-            if (me === activeleader) {
-                instructions = (
-                    <div>
-                        <strong>{game.rejectedClue ? 'Your clue was rejected! ': ''}</strong>
-                        Give a clue for {myteammates}. It should end with a number or "infinity".
-                        <div>
-                            <TextField value={this.state.clue} onChange={this.onChangeClue} floatingLabelText="Enter clue here"/>
-                            &nbsp;
-                            <RaisedButton label="Send Clue" onClick={this.onSendClue} primary={true}/>
-                        </div>
-                    </div>
-                );
-                color = styles.actionNeeded;
-            } else {
-                instructions = `${game.rejectedClue ? 'The clue was rejected! ' : ''}${activeleader.name} is giving a
-                    clue for the ${game.redturn ? 'red' : 'blue'} team (${currentteamnames}).`;
-            }
-        } else if (game.mode === 'verify') {
+        let bgcolor = { backgroundColor: '#FFCDD2', top: 0, left: 0, right: 0, bottom: 0 };
+        if (game.mode === 'gameover') {
+            const winnersNames = game.winners.map(id => players.find(p=>p.id===id).name).join(', ');
+            instructions = <div>The game is over! {winnersNames} is victorious!</div>;
+        } else if (game.mode === 'round') {
             if (me === otherleader) {
                 instructions = (
                     <div>{activeleader.name} wants to give this clue: "{me._private.clue}". Is that okay?
@@ -130,7 +116,7 @@ export default class PlayArea extends Component {
                 instructions = (
                     <div>{currentteamnames}: The clue is: "{game.clue}". Guess a card{game.guesses ? ' or pass' : ''}!
                         {game.maxguesses ? ' ' + (game.maxguesses - game.guesses) + ' guesses left (not including bonus guess)' : ' Infinite guesses left... good luck.'}
-                        {game.guesses ? <div><RaisedButton label="Pass" onClick={this.onPass}/></div>: ''}
+                        {game.guesses ? <div><RaisedButton label="Pass" onClick={this.onPass}/></div> : ''}
                     </div>
                 );
                 color = styles.actionNeeded;
@@ -158,35 +144,36 @@ export default class PlayArea extends Component {
                     <Paper zDepth={4} style={Object.assign({}, styles.instructions, color)}>
                         {instructions}
                     </Paper>
-                    <div style={{ display: 'flex', flexWrap: 'wrap'}}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap' }}>
 
-                        <div style={{ width: '33%'}}>
-
-                        </div>
-                        <div style={{ width: '33%'}}>
+                        <div style={{ width: '33%' }}>
 
                         </div>
-                        <div style={{ width: '33%'}}>
+                        <div style={{ width: '33%' }}>
 
                         </div>
-
-                        <div style={{ width: '33%'}}>
-
-                        </div>
-                        <div style={{ width: '33%'}}>
-
-                        </div>
-                        <div style={{ width: '33%'}}>
+                        <div style={{ width: '33%' }}>
 
                         </div>
 
-                        <div style={{ width: '33%'}}>
+                        <div style={{ width: '33%' }}>
 
                         </div>
-                        <div style={{ width: '33%'}}>
-                            {me._private.hand.map(card => <img key={card} src={`/assets/images/princessletter/${card}.png`}/>)}
+                        <div style={{ width: '33%' }}>
+
                         </div>
-                        <div style={{ width: '33%'}}>
+                        <div style={{ width: '33%' }}>
+
+                        </div>
+
+                        <div style={{ width: '33%' }}>
+
+                        </div>
+                        <div style={{ width: '33%' }}>
+                            {me._private.hand.map(card => <img key={card}
+                                                               src={`/assets/images/princessletter/${card}.png`}/>)}
+                        </div>
+                        <div style={{ width: '33%' }}>
 
                         </div>
 

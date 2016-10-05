@@ -1,14 +1,6 @@
 const _ = require('lodash');
-
-const scoreNeededToWinByPlayerCount = {
-    2: 7,
-    3: 5,
-    4: 4,
-    5: 3,
-    6: 3,
-    7: 2,
-    8: 2
-};
+const scoreNeededToWinByPlayerCount = require('./scoreNeededToWinByPlayerCount');
+const cardNames = require('./cardNames');
 
 function forPlayer(id, cb, { _players }) {
     for (let i = 0; i < _players.length; i++) {
@@ -48,6 +40,7 @@ function doNewRound(game) {
 }
 
 module.exports.setup = function(game){
+    game.log = [];
     game.turn = game.players[_.random(game.players.length-1)];
     game.winners = null;
     game._players.forEach((player, i, players) => {
@@ -81,13 +74,35 @@ module.exports.turn = function(turn, game){
             if (target._private.hand[0] === thisPlayer.guess) {
                 target.dead = true;
                 discardCard(target, thisPlayer.guess);
+                game.log(`{0} played a Guard and guessed that {1} was a ${cardNames[thisPlayer.guess]} and was CORRECT!`);
+            } else {
+                game.log(`{0} played a Guard and guessed that {1} was a ${cardNames[thisPlayer.guess]} but was incorrect.`);
             }
+        } else {
+            game.log(`{0} played a Guard but there were no legal targets so it was discarded without effect.`);
         }
     } else if (turn.card === 2) {
-        if (!target && targetablePlayers.length){
+        if (!target && targetablePlayers.length) {
             throw new Error('Cheating (or bug?) detected for ' + turn.user.id);
         } else if (target !== thisPlayer) {
             thisPlayer.peek = target._private.hand[0];
+            game.log(`{0} played a Priest to peek at {1}'s card.`);
+        } else {
+            game.log(`{0} played a Priest but there were no legal targets so it was discarded without effect.`);
+        }
+    } else if (turn.card === 3) {
+        if ((!target && targetablePlayers.length) || (target && target === thisPlayer) || (target && !targetablePlayers.includes(target))) {
+            throw new Error('Cheating (or bug?) detected for ' + turn.user.id);
+        } else if (target) {
+            discardCard(thisPlayer, turn.card);
+            discarded = true;
+            if (thisPlayer._private.hand[0] > target._private.hand[0]) {
+                target.dead = true;
+                discardCard(target, thisPlayer.guess);
+            } else if (thisPlayer._private.hand[0] > target._private.hand[0]) {
+                thisPlayer.dead = true;
+                discardCard(thisPlayer, thisPlayer._private.hand[0]);
+            }
         }
     } else if (turn.card === 4) {
         thisPlayer.protected = true;
@@ -123,7 +138,10 @@ module.exports.turn = function(turn, game){
 
     // check for round end
     livePlayers = game._players.filter(player => !player.dead);
-    if (game._hidden.deck.length === 0 || livePlayers.length === 1) {
+    if (livePlayers.length === 1) {
+        livePlayers[0].score++;
+        game.winners = livePlayers[0].id;
+    } else if (game._hidden.deck.length === 0) {
         livePlayers.forEach(player => player.hand = player._private.hand);
         const bestcard = _.max(livePlayers.map(player => player.hand[0]));
         const playersWithBestCard = livePlayers.filter(player => player.hand[0] === bestcard);
@@ -136,8 +154,10 @@ module.exports.turn = function(turn, game){
             playersWithBestDiscard.forEach(player => player.score++);
             game.winners = playersWithBestDiscard.map(player => player.id);
         }
+    }
 
-        // check for game over
+    // check for game over, or start a new round
+    if (game._hidden.deck.length === 0 || livePlayers.length === 1) {
         const winners = game._players.filter(player => player.score >= scoreNeededToWinByPlayerCount[game._players.length]);
         if (winners.length) {
             game.winners = winners.map(player => player.id);
@@ -145,9 +165,10 @@ module.exports.turn = function(turn, game){
         } else {
             game.mode = 'round';
         }
+        return;
     }
 
-    // next player
+    // otherwise, go to next player
     do {
         game.turn = thisPlayer.playerToLeft;
         thisPlayer = livePlayers.find(player => player.id === game.turn);

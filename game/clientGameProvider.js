@@ -8,6 +8,6 @@ export function getLibrary() {
     return Object.keys(library);
 }
 
-export function getConfiguration(game) {
-    return library[game].getConfiguration();
+export function getConfiguration(game, currentOptions, currentPlayerCount) {
+    return library[game].getConfiguration(currentOptions, currentPlayerCount);
 }

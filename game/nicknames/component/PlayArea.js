@@ -67,7 +67,7 @@ export default class PlayArea extends Component {
         }
         const game = this.props.games.find(game => game.id === this.props.params.id);
         const players = game._players.map(
-            player => Object.assign({ name: this.props.users.find(p=>p.id === player.id).name, player })
+            player => Object.assign({ name: this.props.users.find(p=>p.id === player.id).name }, player )
         );
 
         const progress = ((9 - _.min([game.redwordsleft, game.bluewordsleft])) / 9) * 100;

@@ -1,12 +1,13 @@
+// TODOS:
+// 1. Minion win condition is wrong I think...
+// 2. There are some information leaks if someone is watching the network, specifically the roles with multiple
+//    phases like PI, Witch, Doppleganger...
+
 const _ = require('lodash');
 const roles = require('./roles');
 const moment = require('moment');
 
-const CENTER_LEFT = 0,
-    CENTER_MIDDLE = 1,
-    CENTER_RIGHT = 2,
-    CENTER_WEREWOLF = 3;
-
+const CENTER_WEREWOLF = 3;
 const WEREWOLF_ROLES_THAT_ARE_KNOWN = ['werewolf', 'alphaWolf', 'mysticWolf', 'dreamWolf'];
 const SEER_ROLES = ['seer', 'apprenticeSeer'];
 const ARTIFACTS = ['werewolf', 'villager', 'tanner', 'void', 'mute', 'shroud'];
@@ -22,15 +23,10 @@ const doAction = function (game, action) {
 
     const tasks = [],
         players = [],
-        centers = [];
+        centers = [],
+        mainPlayer = getPlayer(action.user.id);
 
-    let mainPlayer = getPlayer(action.user.id),
-        peekedOrMovedCards = false;
-
-    this.mainPlayer = idOrPlayer => {
-        mainPlayer = getPlayer(idOrPlayer);
-        return this;
-    };
+    let peekedOrMovedCards = false;
 
     this.player = idOrPlayer => {
         players.push(getPlayer(idOrPlayer));
@@ -54,8 +50,8 @@ const doAction = function (game, action) {
                     last = next;
                 });
             } else if (players.length === 1 && centers.length === 1 && !players[0].shield) {
-                let temp = centers[0];
-                centers[0] = players[0]._hidden.role;
+                let temp = game._hidden.center[centers[0]];
+                game._hidden.center[centers[0]] = players[0]._hidden.role;
                 players[0]._hidden.role = temp;
             }
         });
@@ -68,7 +64,7 @@ const doAction = function (game, action) {
 
         tasks.push(
             () => {
-                let peekedAt;
+                let peekedAt = null;
 
                 players.filter(p => !p.shield).forEach(
                     player => mainPlayer._private.peeked[player.id] = peekedAt = player._hidden.role
@@ -121,14 +117,21 @@ function forPlayer(id, cb, { _players }) {
     }
 }
 
-function playerThinksTheyAre(player, roleOrRoles) {
+function playerIncludesRolesAt(player, location, roleOrRoles, game) {
     const roles = [].concat(roleOrRoles);
-    return roles.includes(player._private.role) || (player._private.role === 'doppleganger' && roleOrRoles.includes(player._private.doppleganger));
+    return roles.includes(player[location].role) ||
+        (player[location].role === 'doppleganger' && roleOrRoles.includes(game ? game[location].doppleganger : player[location].doppleganger)) ||
+        (roles.includes('werewolf') && player[location].role === 'paranormalInvestigator' && game ? game[location].piIsWerewolf : player[location].piIsWerewolf) ||
+        (roles.includes('tanner') && player[location].role === 'paranormalInvestigator' && game ? game[location].piIsTanner : player[location].piIsTanner) ||
+        (roles.includes('vampire') && player[location].role === 'paranormalInvestigator' && game ? game[location].piIsVampire : player[location].piIsVampire);
+}
+
+function playerThinksTheyAre(player, roleOrRoles) {
+    return playerIncludesRolesAt(player, '_private', roleOrRoles);
 }
 
 function playerActuallyIs(player, roleOrRoles, game) {
-    const roles = [].concat(roleOrRoles);
-    return roles.includes(player._hidden.role) || (player._hidden.role === 'doppleganger' && roleOrRoles.includes(game._hidden.doppleganger));
+    return playerIncludesRolesAt(player, '_hidden', roleOrRoles, game);
 }
 
 function setKnows(players) {
@@ -172,18 +175,34 @@ function setKnows(players) {
     players.forEach(player => player._private.knows = player._private.knows.filter(id => player.id !== id));
 }
 
+function playerActionOrReady(game, action, role, cbIfRole, cbWhenNext, isDoppleganger) {
+    forPlayer(action.user.id, player => {
+        if (isDoppleganger ? player._private.role === 'doppleganger' && game._hidden.doppleganger === role : player._private.role === role) {
+            cbIfRole();
+            player.ready = true;
+        } else {
+            player.ready = true;
+        }
+
+        if (game._players.every(p => p.ready)) {
+            game._players.forEach(p => p.ready = false);
+            cbWhenNext();
+        }
+    }, game);
+}
+
 module.exports.setup = function (game) {
 
     // Determine roles
     const selectedRoles = roles.reduce((cur, role) => {
-        if (game.options[role]) {
+        if (game.options[role.name]) {
             return cur.concat(role.name);
         }
         return cur;
-    }, [].concat(_.times(game.options.villagers, 'villager'), _.times(game.options.werewolves, 'werewolf')));
+    }, [].concat(_.times(game.options.villagers, ()=>'villager'), _.times(game.options.werewolves, ()=>'werewolf')));
 
     // Assign cards
-    game._hidden.center = _.shuffle(selectedRoles); // all cards start in the center, we will hand them out soon
+    game._hidden.center = _.shuffle(selectedRoles.slice()); // all cards start in the center, we will hand them out soon
 
     game._players.forEach(player => {
         player.votes = 0;
@@ -261,7 +280,7 @@ module.exports.day = function (vote, game) {
         }, game);
     }
 
-    if (game._players.every(p => p.vote) || moment().unix() < game.ends) {
+    if (game._players.every(p => p.vote) || moment().unix() > game.ends) {
 
         game.doppleganger = game._hidden.doppleganger;
 
@@ -300,8 +319,21 @@ module.exports.day = function (vote, game) {
                 .filter(player => playerActuallyIs(player, ['minion', 'squire'], game));
             const evilTeamInPlay = game._players
                 .filter(player => playerActuallyIs(player, ['werewolf', 'alphaWolf', 'mysticWolf', 'dreamWolf', 'minion', 'squire'], game));
-            const goodTeamInPlay = game._players
+            let goodTeamInPlay = game._players
                 .filter(player => !playerActuallyIs(player, ['werewolf', 'alphaWolf', 'mysticWolf', 'dreamWolf', 'minion', 'squire', 'tanner', 'apprenticeTanner'], game));
+
+            // cursed might actually be a werewolf
+            goodTeamInPlay.filter(player => playerActuallyIs(player, 'cursed', game)).forEach(cursed => {
+                if (cursed.votes) {
+                    werewolvesInPlay.filter(p => playerActuallyIs(p, 'werewolf', game)).forEach(wolf => {
+                        if (wolf.vote === cursed.id) {
+                            goodTeamInPlay = goodTeamInPlay.filter(p => p !== cursed);
+                            werewolvesInPlay.push(cursed);
+                            evilTeamInPlay.push(cursed);
+                        }
+                    });
+                }
+            });
 
             if (werewolvesInPlay.length) {
 
@@ -329,442 +361,564 @@ module.exports.day = function (vote, game) {
 };
 
 module.exports.doppleganger = function (pick, game) {
-    if (!pick.target || pick.target === pick.user.id) {
-        throwFatalError(pick);
-    }
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        if (!pick.target || pick.target === pick.user.id) {
+            throwFatalError(pick);
+        }
 
-    doAction(game, pick)
-        .player(pick.target)
-        .peek()
-        .do();
+        doAction(game, pick)
+            .player(pick.target)
+            .peek((player, peekedAt) => player._private.doppleganger = game._hidden.doppleganger = peekedAt)
+            .do();
 
-    // Since there's a doppleganger, we need to recalculate the "knows" afterwards
-    setKnows(game._players);
-
-    game.mode = game.order[game.order.indexOf('doppleganger') + 1];
+        // Since there's a doppleganger, we need to recalculate the "knows" afterwards
+        setKnows(game._players);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('doppleganger') + 1];
+    });
 };
 
 module.exports.dopplegangeralphaWolf = function(pick, game) {
-    module.exports.alphaWolf(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangeralphaWolf') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.alphaWolf(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangeralphaWolf') + 1];
+    });
 };
 
 module.exports.dopplegangermysticWolf = function(pick, game) {
-    module.exports.mysticWolf(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangermysticWolf') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.mysticWolf(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangermysticWolf') + 1];
+    });
 };
 
 module.exports.dopplegangersentinel = function(pick, game) {
-    module.exports.sentinel(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangersentinel') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.sentinel(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangersentinel') + 1];
+    });
 };
 
 module.exports.dopplegangerthing = function(pick, game) {
-    module.exports.thing(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerthing') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.thing(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerthing') + 1];
+    });
 };
 
 module.exports.dopplegangerseer = function(pick, game) {
-    module.exports.seer(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerseer') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.seer(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerseer') + 1];
+    });
 };
 
 module.exports.dopplegangerapprenticeSeer = function(pick, game) {
-    module.exports.apprenticeSeer(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerapprenticeSeer') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.apprenticeSeer(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerapprenticeSeer') + 1];
+    });
 };
 
 module.exports.dopplegangerparanormalInvestigator = function(pick, game) {
-    module.exports.paranormalInvestigator(pick, game);
-    if (game.mode === 'paranormalInvestigator2') {
-        game.mode = 'dopplegangerparanormalInvestigator2';
-    } else {
-        game.mode = game.order[game.order.indexOf('dopplegangerparanormalInvestigator') + 1];
-    }
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.paranormalInvestigator(pick, game, true);
+    },()=>{
+        if (game.mode === 'paranormalInvestigator2') {
+            game.mode = 'dopplegangerparanormalInvestigator2';
+        } else {
+            game.mode = game.order[game.order.indexOf('dopplegangerparanormalInvestigator') + 1];
+        }
+    });
 };
 
 module.exports.dopplegangerparanormalInvestigator2 = function(pick, game) {
-    module.exports.paranormalInvestigator2(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerparanormalInvestigator') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.paranormalInvestigator2(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerparanormalInvestigator') + 1];
+    });
 };
 
 module.exports.dopplegangerrobber = function(pick, game) {
-    module.exports.robber(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerrobber') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.robber(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerrobber') + 1];
+    });
 };
 
 module.exports.dopplegangerwitch = function(pick, game) {
-    module.exports.witch(pick, game);
-    if (game.mode === 'witchSwaps') {
-        game.mode = 'dopplegangerwitchSwaps';
-    } else {
-        game.mode = game.order[game.order.indexOf('dopplegangerwitch') + 1];
-    }
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.witch(pick, game, true);
+    },()=>{
+        if (game.mode === 'witchSwaps') {
+            game.mode = 'dopplegangerwitchSwaps';
+        } else {
+            game.mode = game.order[game.order.indexOf('dopplegangerwitch') + 1];
+        }
+    });
 };
 
 module.exports.dopplegangerwitchSwaps = function(pick, game) {
-    module.exports.witchSwaps(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerwitch') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.witchSwaps(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerwitch') + 1];
+    });    
 };
 
 module.exports.dopplegangertroublemaker = function(pick, game) {
-    module.exports.troublemaker(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangertroublemaker') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.troublemaker(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangertroublemaker') + 1];
+    });
+    
+    
 };
 
 module.exports.dopplegangervillageIdiot = function(pick, game) {
-    module.exports.villageIdiot(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangervillageIdiot') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.villageIdiot(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangervillageIdiot') + 1];
+    });
 };
 
 module.exports.dopplegangerdrunk = function(pick, game) {
-    module.exports.drunk(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerdrunk') + 1];
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.drunk(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerdrunk') + 1];
+    });
 };
 
-module.exports.sentinel = function (pick, game) {
-    if (!pick.target || pick.target === pick.user.id) {
-        throwFatalError(pick);
-    }
+module.exports.sentinel = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'sentinel', ()=>{
+        if (!pick.target || pick.target === pick.user.id) {
+            throwFatalError(pick);
+        }
 
-    doAction(game, pick)
-        .player(pick.target)
-        .attributes({ shield: true })
-        .do();
-
-    game.mode = game.order[game.order.indexOf('sentinel') + 1];
-};
-
-module.exports.alphaWolf = function (pick, game) {
-    if (!pick.target || pick.target === pick.user.id) {
-        throwFatalError(pick);
-    }
-
-    doAction(game, pick)
-        .player(pick.target)
-        .center(CENTER_WEREWOLF)
-        .swap()
-        .do();
-
-    game.mode = game.order[game.order.indexOf('alphaWolf') + 1];
-};
-
-module.exports.mysticWolf = function (pick, game) {
-    if (!pick.target || pick.target === pick.user.id) {
-        throwFatalError(pick);
-    }
-
-    doAction(game, pick)
-        .player(pick.target)
-        .peek()
-        .do();
-
-    game.mode = game.order[game.order.indexOf('mysticWolf') + 1];
-};
-
-module.exports.thing = function (pick, game) {
-    if (!pick.target || pick.target === pick.user.id) {
-        throwFatalError(pick);
-    }
-
-    let currentPlayerIndex = _.findIndex(game._players, player => pick.user.id === player.id);
-    let pickedPlayerIndex = _.findIndex(game._players, player => pick.user.id === pick.target);
-
-    if (pickedPlayerIndex !== currentPlayerIndex - 1 || pickedPlayerIndex !== currentPlayerIndex + 1 ||
-        (currentPlayerIndex === 0 && pickedPlayerIndex !== game._players.length - 1) ||
-        (currentPlayerIndex === game._players.length - 1 && pickedPlayerIndex !== 0)) {
-        throwFatalError(pick);
-    }
-
-    doAction(game, pick)
-        .player(pick.target)
-        .attributes({ _private: { tapped: true } })
-        .do();
-
-    game.mode = game.order[game.order.indexOf('thing') + 1];
-};
-
-module.exports.seer = function (pick, game) {
-    if ((!pick.target && (!pick.target1 && !pick.target2)) || pick.target === pick.user.id) {
-        throwFatalError(pick);
-    }
-
-    const action = doAction(game, pick);
-
-    if (pick.target1) {
-        action
-            .center(pick.target1)
-            .center(pick.target2);
-    } else {
-        action
-            .player(pick.target);
-    }
-
-    action.peek().do();
-
-    game.mode = game.order[game.order.indexOf('seer') + 1];
-};
-
-module.exports.apprenticeSeer = function (pick, game) {
-    if (!pick.target) {
-        throwFatalError(pick);
-    }
-
-    doAction(game, pick)
-        .center(pick.target)
-        .peek()
-        .do();
-
-    game.mode = game.order[game.order.indexOf('seer') + 1];
-};
-
-module.exports.paranormalInvestigator = function (pick, game) {
-    if (pick.target) {
         doAction(game, pick)
             .player(pick.target)
-            .peek((player, peeked) => {
-                if (peeked === null) {
-                    throwFatalError(pick);
-                }
-
-                if (peeked === 'werewolf') {
-                    player._private.werewolf = true;
-                    game._hidden.piIsWerewolf = true;
-                    game.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
-                } else if (peeked === 'tanner') {
-                    player._private.tanner = true;
-                    game._hidden.piIsTanner = true;
-                    game.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
-                } else {
-                    game.mode = 'paranormalInvestigator2';
-                }
-            })
+            .attributes({ shield: true })
             .do();
-    } else {
-        game.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
-    }
+    },()=>{
+        game.mode = game.order[game.order.indexOf('sentinel') + 1];
+    }, isDoppleganger);
 };
 
-module.exports.paranormalInvestigator2 = function(pick, game) {
-    module.exports.paranormalInvestigator(pick, game);
-    game.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
+module.exports.alphaWolf = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'alphaWolf', ()=>{
+        if (!pick.target || pick.target === pick.user.id) {
+            throwFatalError(pick);
+        }
+
+        doAction(game, pick)
+            .player(pick.target)
+            .center(CENTER_WEREWOLF)
+            .swap()
+            .do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('alphaWolf') + 1];
+    }, isDoppleganger);
 };
 
-module.export.robber = function (pick, game) {
-    if (!pick.target) {
-        throwFatalError(pick);
-    }
+module.exports.mysticWolf = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'mysticWolf', ()=>{
+        if (!pick.target || pick.target === pick.user.id) {
+            throwFatalError(pick);
+        }
 
-    doAction(game, pick)
-        .player(pick.user.id)
-        .player(pick.target)
-        .swap()
-        .peek()
-        .do();
-
-    game.mode = game.order[game.order.indexOf('robber') + 1];
+        doAction(game, pick)
+            .player(pick.target)
+            .peek()
+            .do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('mysticWolf') + 1];
+    }, isDoppleganger);
 };
 
-module.exports.witch = function (pick, game) {
-    if (pick.target) {
+module.exports.thing = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'thing', ()=>{
+        if (!pick.target || pick.target === pick.user.id) {
+            throwFatalError(pick);
+        }
+
+        let currentPlayerIndex = _.findIndex(game._players, player => pick.user.id === player.id);
+        let pickedPlayerIndex = _.findIndex(game._players, player => pick.user.id === pick.target);
+
+        if (pickedPlayerIndex !== currentPlayerIndex - 1 || pickedPlayerIndex !== currentPlayerIndex + 1 ||
+            (currentPlayerIndex === 0 && pickedPlayerIndex !== game._players.length - 1) ||
+            (currentPlayerIndex === game._players.length - 1 && pickedPlayerIndex !== 0)) {
+            throwFatalError(pick);
+        }
+
+        doAction(game, pick)
+            .player(pick.target)
+            .attributes({ _private: { tapped: true } })
+            .do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('thing') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.seer = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'seer', ()=>{
+        if ((!pick.target && (!pick.target1 && !pick.target2)) || pick.target === pick.user.id) {
+            throwFatalError(pick);
+        }
+
+        const action = doAction(game, pick);
+
+        if (pick.target1) {
+            action
+                .center(pick.target1)
+                .center(pick.target2);
+        } else {
+            action
+                .player(pick.target);
+        }
+
+        action.peek().do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('seer') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.apprenticeSeer = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'apprenticeSeer', ()=>{
+        if (!pick.target) {
+            throwFatalError(pick);
+        }
+
         doAction(game, pick)
             .center(pick.target)
             .peek()
             .do();
-
-        game.mode = 'witchSwaps';
-    } else {
-        game.mode = game.order[game.order.indexOf('witch') + 1];
-    }
+    },()=>{
+        game.mode = game.order[game.order.indexOf('seer') + 1];
+    }, isDoppleganger);
 };
 
-module.exports.witchSwaps = function (pick, game) {
-    if (!pick.target) {
-        throwFatalError(pick);
-    }
+module.exports.paranormalInvestigator = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'paranormalInvestigator', ()=>{
+        if (pick.target) {
+            doAction(game, pick)
+                .player(pick.target)
+                .peek((player, peeked) => {
+                    if (peeked === null) {
+                        throwFatalError(pick);
+                    }
 
-    let peekedAt = null;
-
-    forPlayer(pick.user.id, player => {
-        _.forOwn(player._private.peeked, (value, key) => peekedAt = key);
-    }, game);
-
-    if (peekedAt === null) {
-        throwFatalError(pick);
-    }
-
-    doAction(game, pick)
-        .player(pick.target)
-        .center(peekedAt)
-        .swap()
-        .do();
-
-    doAction(game, pick)
-        .player(pick.target)
-        .peek()
-        .do();
-
-    game.mode = game.order[game.order.indexOf('witch') + 1];
-};
-
-module.exports.troublemaker = function (pick, game) {
-    if (!pick.target1 || !pick.target2 || pick.target1 === pick.target2) {
-        throwFatalError(pick);
-    }
-
-    doAction(game, pick)
-        .player(pick.target1)
-        .player(pick.target2)
-        .swap()
-        .do();
-
-    game.mode = game.order[game.order.indexOf('troublemaker') + 1];
-};
-
-module.exports.villageIdiot = function (pick, game) {
-    if (pick.target) {
-        const action = doAction(game, pick);
-        game._players.forEach(player => {
-            if (player.id !== pick.user.id) {
-                action.player(player);
-            }
-        });
-        if (pick.target === 'reverse') {
-            action.reversePlayers();
+                    if (peeked === 'werewolf') {
+                        player._private.werewolf = true;
+                        game._hidden.piIsWerewolf = true;
+                        game._hidden.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
+                    } else if (peeked === 'tanner') {
+                        player._private.tanner = true;
+                        game._hidden.piIsTanner = true;
+                        game._hidden.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
+                    } else if (peeked === 'vampire') {
+                        player._private.vampire = true;
+                        game._hidden.piIsVampire = true;
+                        game._hidden.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
+                    } else {
+                        game._hidden.mode = 'paranormalInvestigator2';
+                    }
+                })
+                .do();
         }
-
-        action.swap().do();
-    }
-
-    game.mode = game.order[game.order.indexOf('villageIdiot') + 1];
+    },()=>{
+        if (game._hidden.mode) {
+            game.mode = game._hidden.mode;
+            game._hidden.mode = null;
+        } else {
+            game.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
+        }
+    }, isDoppleganger);
 };
 
-module.exports.auraSeer = function (pick, game) {
-    const auraPlayers = game._players.filter(player => player.peekedOrMovedCards);
-
-    forPlayer(pick.user.id, player => player._hidden.knows = player._hidden.knows.concat(auraPlayers), game);
-
-    game.mode = game.order[game.order.indexOf('auraSeer') + 1];
+module.exports.paranormalInvestigator2 = function(pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'paranormalInvestigator', ()=>{
+        module.exports.paranormalInvestigator(pick, game, isDoppleganger);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
+    }, isDoppleganger);
 };
 
-module.exports.dopplegangerauraSeer = function (pick, game) {
-    module.exports.auraSeer(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerauraSeer') + 1];
-};
-
-module.exports.drunk = function (pick, game) {
-    if (!pick.target || pick.target.toString().length !== 1) {
-        throwFatalError(pick);
-    }
-
-    doAction(game, pick)
-        .player(pick.user.id)
-        .center(pick.target)
-        .swap()
-        .do();
-
-    game.mode = game.order[game.order.indexOf('drunk') + 1];
-};
-
-module.exports.insomniac = function (pick, game) {
-    doAction(game, pick)
-        .player(pick.user.id)
-        .peek()
-        .do();
-
-    game.mode = game.order[game.order.indexOf('insomniac') + 1];
-};
-
-module.exports.dopplegangerinsomniac = function (pick, game) {
-    module.exports.insomniac(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerinsomniac') + 1];
-};
-
-module.exports.squire = function (pick, game) {
-    const action = doAction(game, pick);
-
-    game._players
-        .filter(player => playerThinksTheyAre(player, WEREWOLF_ROLES_THAT_ARE_KNOWN))
-        .forEach(player => action.player(player));
-
-    action.peek().do();
-
-    game.mode = game.order[game.order.indexOf('squire') + 1];
-};
-
-module.exports.dopplegangersquire = function (pick, game) {
-    module.exports.squire(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangersquire') + 1];
-};
-
-module.exports.beholder = function (pick, game) {
-    const action = doAction(game, pick);
-
-    game._players
-        .filter(player => playerThinksTheyAre(player, SEER_ROLES))
-        .forEach(player => action.player(player));
-
-    action.peek().do();
-
-    game.mode = game.order[game.order.indexOf('beholder') + 1];
-};
-
-module.exports.dopplegangerbeholder = function (pick, game) {
-    module.exports.beholder(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerbeholder') + 1];
-};
-
-module.exports.revealer = function (pick, game) {
-    if (!pick.target || pick.target === pick.user.id) {
-        throwFatalError(pick);
-    }
-
-    doAction(game, pick)
-        .player(pick.target)
-        .peek()
-        .do();
-
-    forPlayer(pick.target, target => {
-        if (target.shield) {
+module.exports.robber = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'robber', ()=>{
+        if (!pick.target) {
             throwFatalError(pick);
         }
 
-        if (target._hidden.role !== 'werewolf' && target._hidden.role !== 'tanner') {
-            target.role = target._hidden.role;
+        doAction(game, pick)
+            .player(pick.user.id)
+            .player(pick.target)
+            .swap()
+            .peek()
+            .do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('robber') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.witch = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'witch', ()=>{
+        if (pick.target) {
+            doAction(game, pick)
+                .center(pick.target)
+                .peek()
+                .do();
+
+            game._hidden.witchWillSwap = true;
         }
-    }, game);
-
-    game.mode = game.order[game.order.indexOf('revealer') + 1];
+    },()=>{
+        if (game._hidden.witchWillSwap) {
+            game.mode = 'witchSwaps';
+        } else {
+            game.mode = game.order[game.order.indexOf('witch') + 1];
+        }
+    }, isDoppleganger);
 };
 
-module.exports.dopplegangerrevealer = function (pick, game) {
-    module.exports.revealer(pick, game);
-    game.mode = game.order[game.order.indexOf('dopplegangerrevealer') + 1];
-};
+module.exports.witchSwaps = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'witch', ()=>{
+        if (!pick.target) {
+            throwFatalError(pick);
+        }
 
-module.exports.curator = function (pick, game, artifactToSplice) {
-    let artifacts = ARTIFACTS.slice();
+        let peekedAt = null;
 
-    if (artifactToSplice) {
-        artifacts = artifacts.splice(artifactToSplice, 1);
-    }
+        forPlayer(pick.user.id, player => {
+            _.forOwn(player._private.peeked, (value, key) => peekedAt = key);
+        }, game);
 
-    if (pick.target) {
+        if (peekedAt === null) {
+            throwFatalError(pick);
+        }
+
         doAction(game, pick)
             .player(pick.target)
-            .attributes({ artifact: true })
+            .center(peekedAt)
+            .swap()
             .do();
 
-        forPlayer(pick.target, player => {
-            player._private.artifact = _.shuffle(artifacts)[0];
-        }, game);
-    }
-
-    game.mode = game.order[game.order.indexOf('curator') + 1];
+        doAction(game, pick)
+            .player(pick.target)
+            .peek()
+            .do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('witch') + 1];
+    }, isDoppleganger);
 };
 
-module.exports.dopplegangercurator = function (pick, game) {
-    const playerWithArtifact = game._players.find(player => player.artifact);
-    module.exports.curator(pick, game, playerWithArtifact && playerWithArtifact._private.artifact);
-    game.mode = game.order[game.order.indexOf('dopplegangercurator') + 1];
+module.exports.troublemaker = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'troublemaker', ()=>{
+        if (!pick.target1 || !pick.target2 || pick.target1 === pick.target2) {
+            throwFatalError(pick);
+        }
+
+        doAction(game, pick)
+            .player(pick.target1)
+            .player(pick.target2)
+            .swap()
+            .do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('troublemaker') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.villageIdiot = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'villageIdiot', ()=>{
+        if (pick.target) {
+            const action = doAction(game, pick);
+            game._players.forEach(player => {
+                if (player.id !== pick.user.id) {
+                    action.player(player);
+                }
+            });
+            if (pick.target === 'reverse') {
+                action.reversePlayers();
+            }
+
+            action.swap().do();
+        }
+    },()=>{
+        game.mode = game.order[game.order.indexOf('villageIdiot') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.auraSeer = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'auraSeer', ()=>{
+        const auraPlayers = game._players.filter(player => player.peekedOrMovedCards);
+
+        forPlayer(pick.user.id, player => player._hidden.knows = player._hidden.knows.concat(auraPlayers), game);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('auraSeer') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.dopplegangerauraSeer = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.auraSeer(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerauraSeer') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.drunk = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'drunk', ()=>{
+        if (!pick.target || pick.target.toString().length !== 1) {
+            throwFatalError(pick);
+        }
+
+        doAction(game, pick)
+            .player(pick.user.id)
+            .center(pick.target)
+            .swap()
+            .do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('drunk') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.insomniac = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'insomniac', ()=>{
+        doAction(game, pick)
+            .player(pick.user.id)
+            .peek()
+            .do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('insomniac') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.dopplegangerinsomniac = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.insomniac(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerinsomniac') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.squire = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'squire', ()=>{
+        const action = doAction(game, pick);
+
+        game._players
+            .filter(player => playerThinksTheyAre(player, WEREWOLF_ROLES_THAT_ARE_KNOWN))
+            .forEach(player => action.player(player));
+
+        action.peek().do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('squire') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.dopplegangersquire = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.squire(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangersquire') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.beholder = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'beholder', ()=>{
+        const action = doAction(game, pick);
+
+        game._players
+            .filter(player => playerThinksTheyAre(player, SEER_ROLES))
+            .forEach(player => action.player(player));
+
+        action.peek().do();
+    },()=>{
+        game.mode = game.order[game.order.indexOf('beholder') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.dopplegangerbeholder = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.beholder(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerbeholder') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.revealer = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'revealer', ()=>{
+        if (!pick.target || pick.target === pick.user.id) {
+            throwFatalError(pick);
+        }
+
+        doAction(game, pick)
+            .player(pick.target)
+            .peek()
+            .do();
+
+        forPlayer(pick.target, target => {
+            if (target.shield) {
+                throwFatalError(pick);
+            }
+
+            if (target._hidden.role !== 'werewolf' && target._hidden.role !== 'tanner') {
+                target.role = target._hidden.role;
+            }
+        }, game);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('revealer') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.dopplegangerrevealer = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        module.exports.revealer(pick, game, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangerrevealer') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.curator = function (pick, game, artifactToSplice, isDoppleganger) {
+    playerActionOrReady(game, pick, 'curator', ()=>{
+        let artifacts = ARTIFACTS.slice();
+
+        if (artifactToSplice) {
+            artifacts = artifacts.splice(artifactToSplice, 1);
+        }
+
+        if (pick.target) {
+            doAction(game, pick)
+                .player(pick.target)
+                .attributes({ artifact: true })
+                .do();
+
+            forPlayer(pick.target, player => {
+                player._private.artifact = _.shuffle(artifacts)[0];
+                if (['werewolf', 'villager', 'vampire'].concat(roles.map(role => role.name)).includes(player._private.artifact)) {
+                    player._hidden.ignoredRole = player._hidden.role;
+                    player._hidden.role = player._private.role = player._private.artifact;
+                }
+            }, game);
+        }
+    },()=>{
+        game.mode = game.order[game.order.indexOf('curator') + 1];
+    }, isDoppleganger);
+};
+
+module.exports.dopplegangercurator = function (pick, game, isDoppleganger) {
+    playerActionOrReady(game, pick, 'doppleganger', ()=>{
+        const playerWithArtifact = game._players.find(player => player.artifact);
+        module.exports.curator(pick, game, playerWithArtifact && playerWithArtifact._private.artifact, true);
+    },()=>{
+        game.mode = game.order[game.order.indexOf('dopplegangercurator') + 1];
+    }, isDoppleganger);
 };

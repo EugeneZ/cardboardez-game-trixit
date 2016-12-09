@@ -6,7 +6,7 @@ module.exports = [
         description: `When Alpha Wolf is used, a werewold card is added to the center cards. When Alpha Wolf wakes up,
             they switch the center werewolf card with a card held by another player.`,
         werewolf: true,
-        wake: [20, 21]
+        wake: 21
     },
     {
         name: 'mysticWolf',
@@ -14,7 +14,7 @@ module.exports = [
         type: 'boolean',
         description: `Mystic Wolf can look at one player's card after the werewolf phase.`,
         werewolf: true,
-        wake: [20, 22]
+        wake: 22
     },
     {
         name: 'dreamWolf',
@@ -32,7 +32,7 @@ module.exports = [
             means the werewolves and Minion win if Minion is killed. If there are no werewolves, Minion only wins if a
             different villager is killed.`,
         werewolf: true
-        //wake: [30] // Doesn't wake in this version, info is given directly
+        //wake: 30 // Doesn't wake in this version, info is given directly
     },
     {
         name: 'squire',
@@ -42,7 +42,7 @@ module.exports = [
             means the werewolves and Minion win if Squire is killed. If there are no werewolves, Squire only wins if a
             different villager is killed. In addition, Squire gets to look at the werewolves' cards late in the night.`,
         werewolf: true,
-        wake: [93]
+        wake: 93
     },
     {
         name: 'tanner',
@@ -57,7 +57,7 @@ module.exports = [
         type: 'boolean',
         description: `Apprentice Tanner knows who Tanner is. Apprentice Tanner only wins if one or both of the tanners
             are killed.`
-        //wake: [32] // Doesn't wake in our version, gets info directly
+        //wake: 32 // Doesn't wake in our version, gets info directly
     },
     {
         name: 'doppleganger',
@@ -66,7 +66,7 @@ module.exports = [
         description: `The Doppleganger wakes first and looks at another player's card. They become that role,
                 performing its action immediately if possible. If not possible to perform immediately, the doppleganger
                 will wake to perform their new role later.`,
-        wake: [-70]
+        wake: -70
     },
     {
         name: 'sentinel',
@@ -74,7 +74,7 @@ module.exports = [
         type: 'boolean',
         description: `Sentinel places a shield token on any card. That card may not be viewed, moved, or have an
             artifact.`,
-        wake: [0],
+        wake: 0,
         villager: true
     },
     {
@@ -82,7 +82,7 @@ module.exports = [
         label: 'Thing',
         type: 'boolean',
         description: `Thing may tap the shoulder of a single player beside them when Thing Wakes.`,
-        wake: [42],
+        wake: 42,
         villager: true
     },
     {
@@ -90,7 +90,7 @@ module.exports = [
         label: 'First Mason',
         type: 'boolean',
         description: `The Masons know each other.`,
-        //wake: [40], // Doesn't wake in our version, gets info directly
+        //wake: 40, // Doesn't wake in our version, gets info directly
         villager: true
     },
     {
@@ -98,7 +98,7 @@ module.exports = [
         label: 'Second Mason',
         type: 'boolean',
         description: `The Masons know each other.`,
-        //wake: [40], // Doesn't wake in our version, gets info directly
+        //wake: 40, // Doesn't wake in our version, gets info directly
         villager: true
     },
     {
@@ -106,7 +106,7 @@ module.exports = [
         label: 'Seer',
         type: 'boolean',
         description: `Seer looks at another player's card or at two cards in the center.`,
-        wake: [50],
+        wake: 50,
         villager: true
     },
     {
@@ -114,7 +114,7 @@ module.exports = [
         label: 'Apprentice Seer',
         type: 'boolean',
         description: `Apprentice Seer looks at a card in the center.`,
-        wake: [52],
+        wake: 52,
         villager: true
     },
     {
@@ -123,7 +123,7 @@ module.exports = [
         type: 'boolean',
         description: `PI may look at up to two other players' cards. If the PI sees a Tanner or a Werewolf of any type,
         PI stops looking at cards and becomes a tanner or werewolf respectively.`,
-        wake: [53]
+        wake: 53
     },
     {
         name: 'robber',
@@ -131,7 +131,7 @@ module.exports = [
         type: 'boolean',
         description: `The Robber may swap cards with a player and look at the new card, but does not perform that new
             role's action.`,
-        wake: [60],
+        wake: 60,
         villager: true
     },
     {
@@ -140,7 +140,7 @@ module.exports = [
         type: 'boolean',
         description: `Witch may look at any center card. If Witch does, Witch must swap that card with any player's
             card.`,
-        wake: [62],
+        wake: 62,
         villager: true
     },
     {
@@ -148,7 +148,7 @@ module.exports = [
         label: 'Troublemaker',
         type: 'boolean',
         description: `Troublemaker swaps the cards of two other players.`,
-        wake: [70],
+        wake: 70,
         villager: true
     },
     {
@@ -156,7 +156,7 @@ module.exports = [
         label: 'Village Idiot',
         type: 'boolean',
         description: `Village Idiot may move all players' cards except their own left or right.`,
-        wake: [72],
+        wake: 72,
         villager: true
     },
     {
@@ -164,7 +164,7 @@ module.exports = [
         label: 'Aura Seer',
         type: 'boolean',
         description: `Aura Seer knows who viewed or moved cards.`,
-        wake: [73],
+        wake: 73,
         villager: true
     },
     {
@@ -172,7 +172,7 @@ module.exports = [
         label: 'Drunk',
         type: 'boolean',
         description: `Drunk swaps their card with one in the center but does not look at it.`,
-        wake: [80],
+        wake: 80,
         villager: true
     },
     {
@@ -180,7 +180,7 @@ module.exports = [
         label: 'Insomniac',
         type: 'boolean',
         description: `Insomniac looks at their card towards the end of the night.`,
-        wake: [90],
+        wake: 90,
         villager: true
     },
     {
@@ -188,7 +188,7 @@ module.exports = [
         label: 'Beholder',
         type: 'boolean',
         description: `Beholder knows who the Seer and Apprentice Seer is. The can also look at at the Seer's card.`,
-        wake: [99],
+        wake: 99,
         villager: true
     },
     {
@@ -197,7 +197,7 @@ module.exports = [
         type: 'boolean',
         description: `Revealer flips over one other player's card face up. If its a tanner or werewolf, it must be
         flipped back down.`,
-        wake: [100],
+        wake: 100,
         villager: true
     },
     {
@@ -208,7 +208,7 @@ module.exports = [
             player must look at the artifact but cannot show it to anyone else. Artifacts include turning the player
             into a werewolf, villager, or tanner (with any powers they may have had removed), silencing the player, or 
             forcing the player to play with their back turned.`,
-        wake: [110],
+        wake: 110,
         villager: true
     },
     {

@@ -2,6 +2,9 @@
 // 1. Minion win condition is wrong I think...
 // 2. There are some information leaks if someone is watching the network, specifically the roles with multiple
 //    phases like PI, Witch, Doppleganger...
+// 3. Timer
+// 4. Thing tap... which direction does it come from? Shouldn't the tapped player be able to tell? And can't the Thing
+//    itself control where ont he person's body they tap...?
 
 const _ = require('lodash');
 const roles = require('./roles');
@@ -213,6 +216,9 @@ module.exports.setup = function (game) {
 
     if (selectedRoles.includes('alphaWolf')) {
         game._hidden.center.push('werewolf');
+        game.centerCount = 4;
+    } else {
+        game.centerCount = 3;
     }
 
     // Determine night actions
@@ -260,27 +266,25 @@ module.exports.setup = function (game) {
 };
 
 module.exports.day = function (vote, game) {
-    if (moment().unix() < game.ends) {
-        forPlayer(vote.user.id, player => {
-            if (player.vote) {
-                forPlayer(player.vote, target => {
-                    target.votes--;
-                    target._hidden.guarded = false;
-                }, game);
-            }
-            player.vote = vote.target;
-            if (player.vote) {
-                forPlayer(player.vote, target => {
-                    target.votes++;
-                    if (playerActuallyIs(player, 'bodyguard', game)) {
-                        target._hidden.guarded = true;
-                    }
-                }, game);
-            }
-        }, game);
-    }
+    forPlayer(vote.user.id, player => {
+        if (player.vote) {
+            forPlayer(player.vote, target => {
+                target.votes--;
+                target._hidden.guarded = false;
+            }, game);
+        }
+        player.vote = vote.target;
+        if (player.vote) {
+            forPlayer(player.vote, target => {
+                target.votes++;
+                if (playerActuallyIs(player, 'bodyguard', game)) {
+                    target._hidden.guarded = true;
+                }
+            }, game);
+        }
+    }, game);
 
-    if (game._players.every(p => p.vote) || moment().unix() > game.ends) {
+    if (game._players.every(p => p.vote) && (!game.ends || moment().unix() > game.ends)) {
 
         game.doppleganger = game._hidden.doppleganger;
 
@@ -289,7 +293,7 @@ module.exports.day = function (vote, game) {
             .filter(player => !player.guarded)
             .filter(player => !playerActuallyIs(player, 'prince', game))
             .sort((a, b) => b.votes - a.votes)
-            .filter((player, i, sorted) => player.votes === sorted[0].votes);
+            .filter((player, i, sorted) => player.votes > 1 && player.votes === sorted[0].votes);
 
         game._players.forEach(player => {
             _.merge(player, player._private, player._hidden);

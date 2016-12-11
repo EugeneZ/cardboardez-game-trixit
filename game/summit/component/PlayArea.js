@@ -49,94 +49,95 @@ const styles = {
 const roleDetails = {
     doppleganger: {
         instructions: `Doppleganger, you must choose another player. You will see their card and become that role. If your role has night actions or knowledge associated with it, it will be given to you soon.`,
-        actionNeeded: { target: true, self: false, optional: false }
+        actionNeeded: { player: true, self: false, optional: false }
     },
     sentinel: {
         instructions: `Sentinel, you may place a shield on any other player, preventing their card from being moved or viewed.`,
-        actionNeeded: { target: true, self: false, optional: true }
+        actionNeeded: { player: true, self: false, optional: true }
     },
     alphaWolf: {
         instructions: `Alpha Wolf, you must choose another player. That player will receive the special fourth center card (which started as a Werewolf).`,
-        actionNeeded: { target: true, self: false, optional: false }
+        actionNeeded: { player: true, self: false, optional: false }
     },
     mysticWolf: {
         instructions: `Mystic Wolf, you may choose another player. You will see that player's card.`,
-        actionNeeded: { target: true, self: false, optional: true }
+        actionNeeded: { player: true, self: false, optional: true }
     },
     thing: {
         instructions: `Thing, you may choose a player to your left or right, and that player will know you "tapped" them.`,
-        actionNeeded: { target: true, self: false, optional: true, leftOrRightTargetOnly: true }
+        actionNeeded: { player: true, self: false, optional: true, leftOrRightPlayerOnly: true }
     },
     seer: {
         instructions: `Seer, you may choose another player OR two center cards, and look at them.`,
-        actionNeeded: { target: true, self: false, optional: true, center: 2, targetOrCenter: true }
+        actionNeeded: { player: true, self: false, optional: true, center: 2, playerOrCenter: true }
     },
     apprenticeSeer: {
         instructions: `Apprentice Seer, you may choose a center card, and look at it.`,
-        actionNeeded: { target: false, self: false, optional: true, center: true }
+        actionNeeded: { player: false, self: false, optional: true, center: true }
     },
     paranormalInvestigator: {
         instructions: `Paranormal Investigator, you may choose another player and look at their card. If it's a Werewolf, Tanner, or Vampire, you become that role. If it's not, you may repeat this process once.`,
-        actionNeeded: { target: true, self: false, optional: true }
+        actionNeeded: { player: true, self: false, optional: true }
     },
     paranormalInvestigator2: {
         instructions: `Paranormal Investigator, you may choose another player and look at their card. If it's a Werewolf, Tanner, or Vampire, you become that role.`,
-        actionNeeded: { target: true, self: false, optional: true }
+        actionNeeded: { player: true, self: false, optional: true }
     },
     robber: {
         instructions: `Robber, you must choose another player and swap cards with them. You will then see your new card.`,
-        actionNeeded: { target: true, self: false, optional: false }
+        actionNeeded: { player: true, self: false, optional: false }
     },
     witch: {
         instructions: `Witch, you may look at a center card. If you do, you must swap that card with any player of your choice (possibly your own).`,
-        actionNeeded: { target: false, self: false, optional: true, center: true }
+        actionNeeded: { player: false, self: false, optional: true, center: true }
     },
     witchSwaps: {
         instructions: `Witch, you must now choose whose card to swap with the card you looked at.`,
-        actionNeeded: { target: true, self: true, optional: false }
+        actionNeeded: { player: true, self: true, optional: false }
     },
     troublemaker: {
         instructions: `Troublemaker, choose two other players. Their cards will be swapped.`,
-        actionNeeded: { target: 2, self: false, optional: true }
+        actionNeeded: { player: 2, self: false, optional: true }
     },
     villageIdiot: {
         instructions: `Village Idiot, you may choose to move all other players' cards without a shield left or right. Select the direction desired or pass.`,
-        actionNeeded: { target: false, self: false, optional: true, chooseLeftOrRight: true }
+        actionNeeded: { player: false, self: false, optional: true, chooseLeftOrRight: true }
     },
     auraSeer: {
         instructions: `Aura Seer, prepare to receive the names of the players who looked at or moved cards so far (if any).`,
-        actionNeeded: { target: false, self: false, optional: true }
+        actionNeeded: { player: false, self: false, optional: true }
     },
     drunk: {
         instructions: `Drunk, you must choose a center card. You will swap with this card without looking at it.`,
-        actionNeeded: { target: false, self: false, optional: false, center: true }
+        actionNeeded: { player: false, self: false, optional: false, center: true }
     },
     insomniac: {
         instructions: `Insomniac, prepare to receive the name of your current role.`,
-        actionNeeded: { target: false, self: false, optional: true }
+        actionNeeded: { player: false, self: false, optional: true }
     },
     squire: {
         instructions: `Squire, prepare to see the cards of the werewolf players you have identified (if any).`,
-        actionNeeded: { target: false, self: false, optional: true }
+        actionNeeded: { player: false, self: false, optional: true }
     },
     beholder: {
         instructions: `Beholder, prepare to see the card of the seer you identified (if any).`,
-        actionNeeded: { target: false, self: false, optional: true }
+        actionNeeded: { player: false, self: false, optional: true }
     },
     revealer: {
         instructions: `Revealer, you may choose a player whose card will be flipped. If it is a Werewolf, Tanner, or Vampire, it will be flipped back down and only you will know about it!`,
-        actionNeeded: { target: true, self: false, optional: true }
+        actionNeeded: { player: true, self: false, optional: true }
     },
     curator: {
         instructions: `Curator, you may choose any player. That player will receive a random artifact, and only that player will know which artifact.`,
-        actionNeeded: { target: true, self: true, optional: true }
+        actionNeeded: { player: true, self: true, optional: true }
     },
 };
 
 @autobind
 export default class PlayArea extends Component {
     state = {
-        tab: 0
+        tab: 0,
+        currentTarget: null
     };
 
     componentDidMount() {
@@ -194,7 +195,7 @@ export default class PlayArea extends Component {
             actionNeeded = roleDetails[game.mode].actionNeeded;
         }
 
-        let main = <Board players={players} game={game} me={me} onClickCard={this.onClickCard}/>;
+        let main = <Board players={players} game={game} me={me} onClickCard={this.onClickCard.bind(this, actionNeeded)}/>;
         if (this.state.tab === 1) {
             main = 'Coming soon...';
         }
@@ -236,8 +237,26 @@ export default class PlayArea extends Component {
         );
     }
 
-    onClickCard(cards) {
-        this.sendAction({ target: cards });
+    onClickCard(actionNeeded, card) {
+        const isCenter = card.toString().length === 1;
+        let data = null;
+
+        if ((typeof actionNeeded.player === 'boolean' && !isCenter) || (typeof actionNeeded.center === 'boolean' && isCenter)) {
+            data = { target: card };
+        } else if (typeof actionNeeded.player === 'number' || typeof actionNeeded.center === 'number') {
+            if (this.state.currentTarget && isCenter ? this.state.currentTarget.toString() === 1 : this.state.currentTarget.toString() > 1) {
+                data = {
+                    target1: this.state.currentTarget,
+                    target2: card
+                };
+            } else {
+                this.setState({ currentTarget: card });
+            }
+        }
+
+        if (data) {
+            this.sendAction({ target: card });
+        }
     }
 
     sendAction(data) {

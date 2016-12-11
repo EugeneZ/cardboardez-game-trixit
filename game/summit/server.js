@@ -181,7 +181,9 @@ function setKnows(players) {
 function playerActionOrReady(game, action, role, cbIfRole, cbWhenNext, isDoppleganger) {
     forPlayer(action.user.id, player => {
         if (isDoppleganger ? player._private.role === 'doppleganger' && game._hidden.doppleganger === role : player._private.role === role) {
-            cbIfRole();
+            if (!player.ready) {
+                cbIfRole();
+            }
             player.ready = true;
         } else {
             player.ready = true;
@@ -506,8 +508,12 @@ module.exports.dopplegangerdrunk = function(pick, game) {
 
 module.exports.sentinel = function (pick, game, isDoppleganger) {
     playerActionOrReady(game, pick, 'sentinel', ()=>{
-        if (!pick.target || pick.target === pick.user.id) {
+        if (pick.target && pick.target === pick.user.id) {
             throwFatalError(pick);
+        }
+
+        if (!pick.target) {
+            return;
         }
 
         doAction(game, pick)
@@ -537,8 +543,12 @@ module.exports.alphaWolf = function (pick, game, isDoppleganger) {
 
 module.exports.mysticWolf = function (pick, game, isDoppleganger) {
     playerActionOrReady(game, pick, 'mysticWolf', ()=>{
-        if (!pick.target || pick.target === pick.user.id) {
+        if (pick.target && pick.target === pick.user.id) {
             throwFatalError(pick);
+        }
+
+        if (!pick.target) {
+            return;
         }
 
         doAction(game, pick)
@@ -552,8 +562,12 @@ module.exports.mysticWolf = function (pick, game, isDoppleganger) {
 
 module.exports.thing = function (pick, game, isDoppleganger) {
     playerActionOrReady(game, pick, 'thing', ()=>{
-        if (!pick.target || pick.target === pick.user.id) {
+        if (pick.target && pick.target === pick.user.id) {
             throwFatalError(pick);
+        }
+
+        if (!pick.target) {
+            return;
         }
 
         let currentPlayerIndex = _.findIndex(game._players, player => pick.user.id === player.id);
@@ -576,8 +590,12 @@ module.exports.thing = function (pick, game, isDoppleganger) {
 
 module.exports.seer = function (pick, game, isDoppleganger) {
     playerActionOrReady(game, pick, 'seer', ()=>{
-        if ((!pick.target && (!pick.target1 && !pick.target2)) || pick.target === pick.user.id) {
+        if ((pick.target1 && !pick.target2) || (!pick.target1 && pick.target2) || pick.target === pick.user.id) {
             throwFatalError(pick);
+        }
+
+        if (!pick.target && !pick.target1) {
+            return;
         }
 
         const action = doAction(game, pick);
@@ -608,38 +626,41 @@ module.exports.apprenticeSeer = function (pick, game, isDoppleganger) {
             .peek()
             .do();
     },()=>{
-        game.mode = game.order[game.order.indexOf('seer') + 1];
+        game.mode = game.order[game.order.indexOf('apprenticeSeer') + 1];
     }, isDoppleganger);
 };
 
 module.exports.paranormalInvestigator = function (pick, game, isDoppleganger) {
     playerActionOrReady(game, pick, 'paranormalInvestigator', ()=>{
-        if (pick.target) {
-            doAction(game, pick)
-                .player(pick.target)
-                .peek((player, peeked) => {
-                    if (peeked === null) {
-                        throwFatalError(pick);
-                    }
-
-                    if (peeked === 'werewolf') {
-                        player._private.werewolf = true;
-                        game._hidden.piIsWerewolf = true;
-                        game._hidden.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
-                    } else if (peeked === 'tanner') {
-                        player._private.tanner = true;
-                        game._hidden.piIsTanner = true;
-                        game._hidden.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
-                    } else if (peeked === 'vampire') {
-                        player._private.vampire = true;
-                        game._hidden.piIsVampire = true;
-                        game._hidden.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
-                    } else {
-                        game._hidden.mode = 'paranormalInvestigator2';
-                    }
-                })
-                .do();
+        if (!pick.target) {
+            return;
         }
+
+        doAction(game, pick)
+            .player(pick.target)
+            .peek((player, peeked) => {
+                if (peeked === null) {
+                    throwFatalError(pick);
+                }
+
+                if (peeked === 'werewolf') {
+                    player._private.werewolf = true;
+                    game._hidden.piIsWerewolf = true;
+                    game._hidden.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
+                } else if (peeked === 'tanner') {
+                    player._private.tanner = true;
+                    game._hidden.piIsTanner = true;
+                    game._hidden.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
+                } else if (peeked === 'vampire') {
+                    player._private.vampire = true;
+                    game._hidden.piIsVampire = true;
+                    game._hidden.mode = game.order[game.order.indexOf('paranormalInvestigator') + 1];
+                } else {
+                    game._hidden.mode = 'paranormalInvestigator2';
+                }
+            })
+            .do();
+
     },()=>{
         if (game._hidden.mode) {
             game.mode = game._hidden.mode;
@@ -677,14 +698,21 @@ module.exports.robber = function (pick, game, isDoppleganger) {
 
 module.exports.witch = function (pick, game, isDoppleganger) {
     playerActionOrReady(game, pick, 'witch', ()=>{
-        if (pick.target) {
-            doAction(game, pick)
-                .center(pick.target)
-                .peek()
-                .do();
-
-            game._hidden.witchWillSwap = true;
+        if (pick.target && pick.target.toString().length !== 1) {
+            throwFatalError(pick);
         }
+
+        if (!pick.target) {
+            return;
+        }
+
+        doAction(game, pick)
+            .center(pick.target)
+            .peek()
+            .do();
+
+        game._hidden.witchWillSwap = true;
+
     },()=>{
         if (game._hidden.witchWillSwap) {
             game.mode = 'witchSwaps';
@@ -743,19 +771,22 @@ module.exports.troublemaker = function (pick, game, isDoppleganger) {
 
 module.exports.villageIdiot = function (pick, game, isDoppleganger) {
     playerActionOrReady(game, pick, 'villageIdiot', ()=>{
-        if (pick.target) {
-            const action = doAction(game, pick);
-            game._players.forEach(player => {
-                if (player.id !== pick.user.id) {
-                    action.player(player);
-                }
-            });
-            if (pick.target === 'reverse') {
-                action.reversePlayers();
-            }
-
-            action.swap().do();
+        if (!pick.target) {
+            return;
         }
+
+        const action = doAction(game, pick);
+        game._players.forEach(player => {
+            if (player.id !== pick.user.id) {
+                action.player(player);
+            }
+        });
+        if (pick.target === 'reverse') {
+            action.reversePlayers();
+        }
+
+        action.swap().do();
+
     },()=>{
         game.mode = game.order[game.order.indexOf('villageIdiot') + 1];
     }, isDoppleganger);

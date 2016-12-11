@@ -4,12 +4,14 @@ import Player from './Player';
 
 const styles = {
     container: {
-        display: 'flex'
+        display: 'flex',
+        flexWrap: 'wrap'
     },
     centerWrapper: {
         margin: 10,
         border: '1px solid #777',
-        padding: 10
+        padding: 10,
+        width: '100%'
     },
     centerTitle: {
         textAlign: 'center',
@@ -20,7 +22,7 @@ const styles = {
 export default class Board extends Component {
     render() {
         return (
-            <div styles={styles.container}>
+            <div style={styles.container}>
                 {this.props.players.map(player => {
                     const isSelf = this.props.me.id === player.id;
                     return <Player

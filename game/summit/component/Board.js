@@ -5,7 +5,8 @@ import Player from './Player';
 const styles = {
     container: {
         display: 'flex',
-        flexWrap: 'wrap'
+        flexWrap: 'wrap',
+        fontFamily: 'Roboto, sans-serif'
     },
     centerWrapper: {
         margin: 10,

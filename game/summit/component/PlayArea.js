@@ -163,8 +163,16 @@ export default class PlayArea extends Component {
 
         const progress = (game.order.indexOf(game.mode) + 1 / game.order.length) * 100;
 
-        const itsMyTurn = game.mode === me._private.role || (['doppleganger', 'paranormalInvestigator', 'witch'].includes(game.mode) && game.mode.indexOf(me._private.role) === 0);
+        const itsMyTurn = game.mode === me._private.role ||
+            (['paranormalInvestigator', 'witch'].includes(me._private.role) && game.mode.indexOf(me._private.role) === 0) ||
+            (me._private.role === 'doppleganger' && game.mode.indexOf('doppleganger' + me._private.doppleganger) === 0);
         const color = itsMyTurn ? styles.actionNeeded : {};
+
+        const submode = me._private.role === 'doppleganger' &&
+                        game.mode !== 'doppleganger' &&
+                        game.mode.indexOf('doppleganger') === 0 ?
+                            game.mode.replace('doppleganger', '') :
+                            game.mode;
 
         let instructions = 'Wait...';
         let actionNeeded = null;
@@ -191,8 +199,8 @@ export default class PlayArea extends Component {
 
             instructions += `Everyone's roles and other info are visible below.`;
         } else if (itsMyTurn) {
-            instructions = roleDetails[game.mode].instructions;
-            actionNeeded = roleDetails[game.mode].actionNeeded;
+            instructions = roleDetails[submode].instructions;
+            actionNeeded = roleDetails[submode].actionNeeded;
         }
 
         let main = <Board players={players} game={game} me={me} onClickCard={this.onClickCard.bind(this, actionNeeded)}/>;

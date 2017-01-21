@@ -1,17 +1,17 @@
 import React, { Component } from 'react';
 import ReactDOM from 'react-dom';
 import autobind from 'autobind-decorator';
-import FontIcon from 'material-ui/FontIcon';
-import { BottomNavigation, BottomNavigationItem } from 'material-ui/BottomNavigation';
-import Paper from 'material-ui/Paper';
-import LinearProgress from 'material-ui/LinearProgress';
-import Dialog from 'material-ui/Dialog';
-import FlatButton from 'material-ui/FlatButton';
-import TextField from 'material-ui/TextField';
+import max from 'lodash/max';
+import { FontIcon } from 'material-ui';
+import { BottomNavigation, BottomNavigationItem } from 'material-ui';
+import { Paper } from 'material-ui';
+import { LinearProgress } from 'material-ui';
+import { Dialog } from 'material-ui';
+import { FlatButton } from 'material-ui';
+import { TextField } from 'material-ui';
 import Cards from './Cards';
 import Card from './Card';
 import Score from './Score';
-import max from 'lodash/max';
 
 const styles = {
     wrapper: {
@@ -95,7 +95,7 @@ export default class PlayArea extends Component {
 
         const { game, players, me, storyteller } = this.getCommonValues(true);
 
-        const progress = (players.map(p=>p.score).sort((a, b)=>b - a)[0] / 30) * 100;
+        const progress = (players.map(p => p.score).sort((a, b) => b - a)[0] / 30) * 100;
         const unready = players.filter(player => !player.ready).map(player => player.name).join(', ');
         const unreadyIgnoringStoryteller = players.filter(player => !player.ready && player !== storyteller).map(player => player.name).join(', ');
 
@@ -134,7 +134,7 @@ export default class PlayArea extends Component {
                 color = styles.actionNeeded;
             }
         } else if (game.mode === 'gameover') {
-            const highscore = max(players.map(p=>p.score));
+            const highscore = max(players.map(p => p.score));
             const winners = players.filter(player => player.score === highscore).map(player => player.name);
             instructions = `The game is over! The winner${winners.length > 1 ? 's are' : ' is'}: ${winners.join(', ')}`;
         }
@@ -186,7 +186,8 @@ export default class PlayArea extends Component {
                 </div>
                 <Paper zDepth={1} style={styles.bottomNavigaiton}>
                     <BottomNavigation selectedIndex={this.state.tab}>
-                        <BottomNavigationItem label="My Hand" icon={<FontIcon className="fa fa-hand-stop-o"/>}
+                        <BottomNavigationItem label="My Hand"
+                                              icon={<FontIcon className="fa fa-hand-stop-o"/>}
                                               onTouchTap={() => this.setState({ tab: 0 })}/>
                         <BottomNavigationItem label="Board" icon={<FontIcon className="fa fa-clone"/>}
                                               onTouchTap={() => this.setState({ tab: 1 })}/>
@@ -200,7 +201,7 @@ export default class PlayArea extends Component {
                         style={styles.dialog.wrapper}
                         open={game.mode === 'story' && me === storyteller && this.state.card !== null}>
                     <TextField floatingLabelText="Your Story" value={this.state.story} onChange={this.onChangeStory}/>
-                    <Card card={this.state.card} onClick={()=> {
+                    <Card card={this.state.card} onClick={() => {
                     }} width="100%"/>
                 </Dialog>
             </div>
@@ -272,8 +273,8 @@ export default class PlayArea extends Component {
     getCommonValues(playersNeedNames) {
         const game = this.props.games.find(game => game.id === this.props.params.id);
         const players = !playersNeedNames ? game._players : game._players.map(
-            player => Object.assign({ name: this.props.users.find(p=>p.id === player.id).name }, player)
-        );
+                player => Object.assign({ name: this.props.users.find(p => p.id === player.id).name }, player)
+            );
         const me = players.find(player => player.id === this.props.user.id);
         const storyteller = players.find(player => player.id === game.storyteller);
 

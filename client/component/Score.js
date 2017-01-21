@@ -1,6 +1,6 @@
 import React from 'react';
-import Paper from 'material-ui/Paper';
-import { GridList, GridTile } from 'material-ui/GridList';
+import { Paper } from 'material-ui';
+import { GridList, GridTile } from 'material-ui';
 
 const styles = {
     wrapper: {

@@ -1,8 +1,3 @@
-/*import tape from 'tape';
-import _ from 'lodash';
-import { getRandomInt } from '../../../game/common/MathUtil';
-import * as trixit from '../../../game/trixit/server';*/
-
 const tape = require('tape');
 const _ = require('lodash');
 const trixit = require('../../../game/trixit/server');

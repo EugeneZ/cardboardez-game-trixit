@@ -2,7 +2,7 @@
   "name": "cardboardez-game-trixit",
   "description": "CardboardEZ game module Trixit, similar to Dixit.",
   "author": "Eugene Zaretskiy",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "./server.js",
   "scripts": {
     "test": "tape -r babel-register \"test/unit/**/*.js\""

@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import ReactDOM from 'react-dom';
 import autobind from 'autobind-decorator';
 import max from 'lodash/max';
 import { FontIcon } from 'material-ui';
@@ -61,7 +60,6 @@ export default class PlayArea extends Component {
     };
 
     componentDidMount() {
-        this.node = ReactDOM.findDOMNode(this);
         window.addEventListener('resize', this.resizeToFit);
         this.resizeToFit();
     }
@@ -75,24 +73,18 @@ export default class PlayArea extends Component {
     }
 
     componentWillReceiveProps(nextProps) {
-        const game = this.props.games.find(game => game.id === this.props.params.id);
-        const nextGame = nextProps.games.find(game => game.id === nextProps.params.id);
-        if (game.id === nextGame.id && game.mode !== nextGame.mode) {
-            if (nextGame.mode === 'voting') {
+        if (this.props.game.mode !== nextProps.game.mode) {
+            if (nextProps.game.mode === 'voting') {
                 this.setState({ tab: 1 });
-            } else if (nextGame.mode === 'story') {
+            } else if (nextProps.game.mode === 'story') {
                 this.setState({ tab: 0 });
-            } else if (nextGame.mode === 'gameover') {
+            } else if (nextProps.game.mode === 'gameover') {
                 this.setState({ tab: 2 });
             }
         }
     }
 
     render() {
-        if (!this.props.user || !this.props.user.id) {
-            return null;
-        }
-
         const { game, players, me, storyteller } = this.getCommonValues(true);
 
         const progress = (players.map(p => p.score).sort((a, b) => b - a)[0] / 30) * 100;
@@ -176,7 +168,7 @@ export default class PlayArea extends Component {
         ];
 
         return (
-            <div>
+            <div ref={node => this.node = node}>
                 <div style={styles.wrapper}>
                     <LinearProgress mode="determinate" value={progress}/>
                     <Paper zDepth={4} style={Object.assign({}, styles.instructions, color)}>
@@ -270,12 +262,9 @@ export default class PlayArea extends Component {
         this.setState({ zoom: this.state.zoom ? null : props });
     }
 
-    getCommonValues(playersNeedNames) {
-        const game = this.props.games.find(game => game.id === this.props.params.id);
-        const players = !playersNeedNames ? game._players : game._players.map(
-                player => Object.assign({ name: this.props.users.find(p => p.id === player.id).name }, player)
-            );
-        const me = players.find(player => player.id === this.props.user.id);
+    getCommonValues() {
+        const { game, me } = this.props;
+        const players = game._players;
         const storyteller = players.find(player => player.id === game.storyteller);
 
         return { game, me, storyteller, players };

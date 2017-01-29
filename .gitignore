@@ -1,4 +1,5 @@
 .DS_Store
 .idea
+/dist
 /node_modules
 cardboardez-game-trixit.iml

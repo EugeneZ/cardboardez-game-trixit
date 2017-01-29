@@ -51,14 +51,14 @@ export default class Card extends Component {
     }
 
     render() {
-        const { card, onClick, width, highlight, labels } = this.props;
+        const { card, onClick, width, highlight, labels, imageUrls } = this.props;
 
         return (
             <div style={Object.assign({}, styles.card, width && { width })}
                  onClick={onClick.bind(this, card)}>
                 {labels && labels.top && <div style={styles.topLabel}>Played by {labels.top}</div>}
                 <img style={Object.assign({}, styles.image, highlight ? styles.highlighted : {})}
-                     src={`/assets/images/trixit/${card}.jpg`}/>
+                     src={imageUrls[card - 1].link}/>
                 {labels && labels.bottom && labels.bottom.length !== 0 &&
                 <div style={styles.bottomLabel}>Votes: {labels.bottom.join(', ')}</div>}
             </div>

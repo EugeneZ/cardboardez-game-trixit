@@ -11,6 +11,7 @@ import { TextField } from 'material-ui';
 import Cards from './Cards';
 import Card from './Card';
 import Score from './Score';
+import { getAlbum } from '../../configuration';
 
 const styles = {
     wrapper: {
@@ -56,10 +57,12 @@ export default class PlayArea extends Component {
         tab: 0,
         card: null,
         story: '',
-        zoom: null
+        zoom: null,
+        imageUrls: null,
     };
 
     componentDidMount() {
+        getAlbum(this.props.game.options.album).then(album => this.setState({ imageUrls: album }));
         window.addEventListener('resize', this.resizeToFit);
         this.resizeToFit();
     }
@@ -85,6 +88,10 @@ export default class PlayArea extends Component {
     }
 
     render() {
+        if (!this.state.imageUrls) {
+            return <div>Loading album...</div>;
+        }
+        
         const { game, players, me, storyteller } = this.getCommonValues(true);
 
         const progress = (players.map(p => p.score).sort((a, b) => b - a)[0] / 30) * 100;
@@ -144,12 +151,13 @@ export default class PlayArea extends Component {
             highlight = me._private.vote;
         }
 
-        let main = <Cards cards={me._private.hand} onClick={this.onClickCardInHand} onZoom={this.onZoom}/>;
+        let main = <Cards cards={me._private.hand} onClick={this.onClickCardInHand} onZoom={this.onZoom}
+                          imageUrls={this.state.imageUrls}/>;
         if (this.state.zoom) {
-            main = <Card width="95%" {...this.state.zoom}/>
+            main = <Card width="95%" {...this.state.zoom} imageUrls={this.state.imageUrls}/>
         } else if (this.state.tab === 1) {
             main = <Cards cards={game.board || []} onClick={this.onClickCardOnBoard} highlight={highlight}
-                          labels={labels} onZoom={this.onZoom}/>
+                          labels={labels} onZoom={this.onZoom} imageUrls={this.state.imageUrls}/>
         } else if (this.state.tab === 2) {
             main = <Score players={players}/>
         }
@@ -193,7 +201,7 @@ export default class PlayArea extends Component {
                         style={styles.dialog.wrapper}
                         open={game.mode === 'story' && me === storyteller && this.state.card !== null}>
                     <TextField floatingLabelText="Your Story" value={this.state.story} onChange={this.onChangeStory}/>
-                    <Card card={this.state.card} onClick={() => {
+                    <Card card={this.state.card} imageUrls={this.state.imageUrls} onClick={() => {
                     }} width="100%"/>
                 </Dialog>
             </div>

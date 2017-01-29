@@ -8,11 +8,11 @@ const styles = {
     }
 };
 
-export default ({ cards, onClick, highlight, labels, onZoom }) =>
+export default ({ cards, onClick, highlight, labels, onZoom, imageUrls }) =>
 
     <div style={styles.cards}>
         {cards.map((card, i) =>
             <Card key={i} card={card} onClick={onClick} highlight={highlight === card} onZoom={onZoom}
-                  labels={labels ? labels[card] : null}/>
+                  labels={labels ? labels[card] : null} imageUrls={imageUrls}/>
         )}
     </div>

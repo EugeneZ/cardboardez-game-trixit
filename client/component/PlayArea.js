@@ -13,42 +13,44 @@ import Card from './Card';
 import Score from './Score';
 import { getAlbum } from '../../configuration';
 
-const styles = {
-    wrapper: {
-        backgroundImage: 'url(/assets/images/trixit/bg.jpg)',
-        paddingBottom: 44,
-        minHeight: '100%'
-    },
-
-    instructions: {
-        margin: 10,
-        padding: 10
-    },
-
-    bottomNavigaiton: {
-        position: 'fixed',
-        left: 0, bottom: 0, width: '100%'
-    },
-
-    dialog: {
+function getStyles(publicBaseURL) {
+    return {
         wrapper: {
-            paddingTop: '0 !important',
-            marginTop: '-65px !important',
-            bottom: '0 !important',
-            overflow: 'scroll !important',
-            height: 'auto !important'
+            backgroundImage: `url(${publicBaseURL}/bg.jpg)`,
+            paddingBottom: 44,
+            minHeight: '100%'
         },
-        content: {
-            width: '100%',
-            maxWidth: '450px',
-            maxHeight: '100% !important'
-        },
-        body: {
-            maxHeight: '100% !important'
-        }
-    },
 
-    actionNeeded: { backgroundColor: '#81C784' }
+        instructions: {
+            margin: 10,
+            padding: 10
+        },
+
+        bottomNavigaiton: {
+            position: 'fixed',
+            left: 0, bottom: 0, width: '100%'
+        },
+
+        dialog: {
+            wrapper: {
+                paddingTop: '0 !important',
+                marginTop: '-65px !important',
+                bottom: '0 !important',
+                overflow: 'scroll !important',
+                height: 'auto !important'
+            },
+            content: {
+                width: '100%',
+                maxWidth: '450px',
+                maxHeight: '100% !important'
+            },
+            body: {
+                maxHeight: '100% !important'
+            }
+        },
+
+        actionNeeded: { backgroundColor: '#81C784' }
+    };
 };
 
 @autobind
@@ -58,11 +60,9 @@ export default class PlayArea extends Component {
         card: null,
         story: '',
         zoom: null,
-        imageUrls: null,
     };
 
     componentDidMount() {
-        getAlbum(this.props.game.options.album).then(album => this.setState({ imageUrls: album }));
         window.addEventListener('resize', this.resizeToFit);
         this.resizeToFit();
     }
@@ -88,10 +88,7 @@ export default class PlayArea extends Component {
     }
 
     render() {
-        if (!this.state.imageUrls) {
-            return <div>Loading album...</div>;
-        }
-        
+        const styles = getStyles(this.props.publicBaseURL);
         const { game, players, me, storyteller } = this.getCommonValues(true);
 
         const progress = (players.map(p => p.score).sort((a, b) => b - a)[0] / 30) * 100;
@@ -151,13 +148,12 @@ export default class PlayArea extends Component {
             highlight = me._private.vote;
         }
 
-        let main = <Cards cards={me._private.hand} onClick={this.onClickCardInHand} onZoom={this.onZoom}
-                          imageUrls={this.state.imageUrls}/>;
+        let main = <Cards cards={me._private.hand} onClick={this.onClickCardInHand} onZoom={this.onZoom}/>;
         if (this.state.zoom) {
-            main = <Card width="95%" {...this.state.zoom} imageUrls={this.state.imageUrls}/>
+            main = <Card width="95%" {...this.state.zoom}/>
         } else if (this.state.tab === 1) {
             main = <Cards cards={game.board || []} onClick={this.onClickCardOnBoard} highlight={highlight}
-                          labels={labels} onZoom={this.onZoom} imageUrls={this.state.imageUrls}/>
+                          labels={labels} onZoom={this.onZoom}/>
         } else if (this.state.tab === 2) {
             main = <Score players={players}/>
         }
@@ -201,7 +197,7 @@ export default class PlayArea extends Component {
                         style={styles.dialog.wrapper}
                         open={game.mode === 'story' && me === storyteller && this.state.card !== null}>
                     <TextField floatingLabelText="Your Story" value={this.state.story} onChange={this.onChangeStory}/>
-                    <Card card={this.state.card} imageUrls={this.state.imageUrls} onClick={() => {
+                    <Card card={this.state.card} onClick={() => {
                     }} width="100%"/>
                 </Dialog>
             </div>

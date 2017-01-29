@@ -1,15 +1,7 @@
 const imgur = require('imgur');
+const merge = require('lodash/merge');
 
-function validateAlbum({ value }) {
-    return new Promise((resolve, reject)=>{
-        getAlbum(value).then(
-            album => album ? resolve(true) : reject(false),
-            err => reject(ex ? ex.message || ex.toString() : 'Error')
-        );
-    });
-}
-
-module.exports.getAlbum = function getAlbum(url) {
+function getAlbum(url) {
     const index = url.lastIndexOf('/');
 
     let albumName;
@@ -33,7 +25,41 @@ module.exports.getAlbum = function getAlbum(url) {
                 reject(err);
             });
     });
-};
+}
+
+function validateAlbum({ value }) {
+    return new Promise((resolve, reject)=>{
+        getAlbum(value).then(
+            album => album ? resolve(true) : reject(false),
+            err => reject(ex ? ex.message || ex.toString() : 'Error')
+        );
+    });
+}
+
+function presubmit(gameData) {
+    const { options: { album }} = gameData;
+    return new Promise((resolve, reject) => {
+        if (!album) {
+            reject(`Imgur album is required.`);
+            return;
+        }
+
+        getAlbum(album).then(images => {
+            if (images.length < 80) {
+                reject(`Imgur album has less than 80 images!`);
+                return;
+            }
+
+            resolve(merge({},gameData,{
+                options: {
+                    images: images.map(imageData => imageData.link)
+                }
+            }));
+        }, err => reject(err));
+    });
+}
+
+module.exports.getAlbum = getAlbum;
 
 module.exports.getConfiguration = function getConfiguration() {
     return {
@@ -45,6 +71,9 @@ module.exports.getConfiguration = function getConfiguration() {
             name: 'album',
             type: 'text',
             validate: validateAlbum
-        }]
+        }],
+        hooks: {
+            presubmit
+        }
     }
 };

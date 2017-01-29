@@ -1,4 +1,5 @@
 /test
 .babelrc
 yarn.lock
+cardboardez-game-trixit.iml
 !/dist/client.js

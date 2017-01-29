@@ -10,7 +10,8 @@ function forPlayer(id, cb, { _players }) {
 }
 
 module.exports.setup = function (game) {
-    game._hidden.deck = _.shuffle(_.times(450, Number));
+    game._hidden.deck = _.shuffle(game.options.images);
+    delete game.options.images; // we don't want to send this to players every time...
     game.storyteller = game.players[_.random(game.players.length - 1)];
     game._players.forEach((player, i, players) => {
         player.score = 0;

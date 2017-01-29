@@ -15,8 +15,10 @@ function getAlbum(url) {
     return new Promise((resolve, reject)=>{
         imgur.getAlbumInfo(albumName)
             .then(function(json) {
-                if (!json || !json.success || json.status !== 200 || !json.data.images || json.data.images.length < 84) {
-                    reject(new Error('Unexpected response'));
+                if (!json || !json.success || json.status !== 200 || !json.data.images) {
+                    reject('Unexpected response, are you sure this is an Imgur album?');
+                } else if (json.data.images.length < 84) {
+                    reject('Imgur album must contain at least 84 images');
                 } else {
                     resolve(json.data.images);
                 }
@@ -31,7 +33,7 @@ function validateAlbum({ value }) {
     return new Promise((resolve, reject)=>{
         getAlbum(value).then(
             album => album ? resolve(true) : reject(false),
-            err => reject(ex ? ex.message || ex.toString() : 'Error')
+            err => reject(err ? err.message || err.toString() : 'Error')
         );
     });
 }
@@ -45,8 +47,8 @@ function presubmit(gameData) {
         }
 
         getAlbum(album).then(images => {
-            if (images.length < 80) {
-                reject(`Imgur album has less than 80 images!`);
+            if (images.length < 84) {
+                reject(`Imgur album has less than 84 images!`);
                 return;
             }
 
